@@ -19,30 +19,24 @@ export default function About() {
     >
       <SectionHeading>About me</SectionHeading>
       <p className="mb-3">
-        After graduating with a degree in{" "}
-        <span className="font-medium">Accounting</span>, I decided to pursue my
-        passion for programming. I enrolled in a coding bootcamp and learned{" "}
-        <span className="font-medium">full-stack web development</span>.{" "}
-        <span className="italic">My favorite part of programming</span> is the
-        problem-solving aspect. I <span className="underline">love</span> the
-        feeling of finally figuring out a solution to a problem. My core stack
-        is{" "}
-        <span className="font-medium">
-          React, Next.js, Node.js, and MongoDB
-        </span>
-        . I am also familiar with TypeScript and Prisma. I am always looking to
-        learn new technologies. I am currently looking for a{" "}
-        <span className="font-medium">full-time position</span> as a software
-        developer.
-      </p>
-
-      <p>
-        <span className="italic">When I'm not coding</span>, I enjoy playing
-        video games, watching movies, and playing with my dog. I also enjoy{" "}
-        <span className="font-medium">learning new things</span>. I am currently
-        learning about{" "}
-        <span className="font-medium">history and philosophy</span>. I'm also
-        learning how to play the guitar.
+        With a decade of experience in software engineering, I've developed a
+        strong foundation in mobile and web application development, crafting
+        seamless digital experiences that drive business growth. My expertise
+        extends into AI engineering, where I leverage advanced machine learning
+        algorithms to tackle complex challenges. Additionally, my deep
+        understanding of blockchain technology and hands-on programming
+        experience in the cryptocurrency space reflect my passion for innovation
+        in emerging fields.
+        <br />
+        <br />
+        Currently, I play a key role in developing a virtual assistant designed
+        for parents, where I focus primarily on the cloud and backend
+        architecture. Beyond just engineering, I take on a crucial position,
+        shaping the project's technical direction and ensuring its successful
+        deployment. This initiative is backed by a company named Insider, a
+        major player in the software industry. Bringing together my skills in
+        AI, cloud infrastructure, and blockchain, I am committed to driving
+        impactful, forward-thinking technological solutions.
       </p>
     </motion.section>
   );
