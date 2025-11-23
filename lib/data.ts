@@ -9,7 +9,7 @@ import dogefun from "@/public/dogefun.jpg";
 import assembly from "@/public/assembly.png";
 import cryptoland from "@/public/cryptoland.jpeg";
 import stocks from "@/public/stocks.jpg";
-
+import borsapro from "@/public/borsapro_MY.png";
 export const links = [
   {
     name: "Home",
@@ -90,6 +90,13 @@ export const experiencesData = [
 ] as const;
 
 export const projectsData = [
+  {
+    title: "BorsaPro Telegram Bot",
+    description:
+      "AI-powered stock insights, daily/weekly summaries, technical analysis, and personalized follow-lists delivered directly to your Telegram.",
+    tags: ["Python", "Telegram Bot", "AI", "Stock Analysis"],
+    imageUrl: borsapro,
+  },
   {
     title: "Dostuma Sor",
     description:
