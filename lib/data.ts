@@ -10,6 +10,7 @@ import assembly from "@/public/assembly.png";
 import cryptoland from "@/public/cryptoland.jpeg";
 import stocks from "@/public/stocks.jpg";
 import borsapro from "@/public/borsapro_new.jpg";
+import yuppo from "@/public/po-icon.svg";
 export const links = [
   {
     name: "Home",
@@ -99,11 +100,20 @@ export const experiencesData = [
 
 export const projectsData = [
   {
+    title: "Yuppo",
+    link: "https://yuppo.org",
+    description:
+      "Yuppo is an educational technology initiative that aims to ensure every child has equal educational opportunities during early childhood. It believes that all children are born with strong potential. It is aware of the importance of the 0–6 age range for supporting this potential and focuses entirely on this area.",
+    tags: ["Python", "FastAPI", "AWS", "PostgreSQL"],
+    imageUrl: yuppo,
+  },
+  {
     title: "BorsaPro Telegram Bot",
     description:
       "AI-powered stock insights, daily/weekly summaries, technical analysis, and personalized follow-lists delivered directly to your Telegram.",
     tags: ["Python", "Telegram Bot", "AI", "Stock Analysis"],
     imageUrl: borsapro,
+    link: "https://borsapro.vercel.app",
   },
   {
     title: "Dostuma Sor",
@@ -118,6 +128,7 @@ export const projectsData = [
       "A web app that lets users bet on Dogecoin whether it will reach a certain price or not.",
     tags: ["React", "TypeScript", "Next.js", "Tailwind", "Redux"],
     imageUrl: dogefun,
+    link: "https://dogefunbet.netlify.app",
   },
   {
     title: "CyBank",
