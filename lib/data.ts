@@ -9,7 +9,7 @@ import dogefun from "@/public/dogefun.jpg";
 import assembly from "@/public/assembly.png";
 import cryptoland from "@/public/cryptoland.jpeg";
 import stocks from "@/public/stocks.jpg";
-import borsapro from "@/public/borsapro_MY.png";
+import borsapro from "@/public/borsapro_new.jpg";
 export const links = [
   {
     name: "Home",
@@ -39,28 +39,28 @@ export const links = [
 
 export const experiencesData = [
   {
-    title: "Full Stack Developer Intern at HomePainter LLC",
-    location: "Des Moines, IA",
-    description:
-      "I developed production level code working on products such as NodeJS, MongoDB queries and Angular; Gained experience with both front-end and back-end development fixing bugs and implementing new features",
-    icon: React.createElement(CgWorkAlt),
-    date: "March 2021 - August 2021",
-  },
-  {
-    title: "Software Engineer Intern at System1",
-    location: "Los Angeles, CA",
-    description:
-      "Developed production level code, working on products in .NET Core framework such as React JS, NodeJS, MongoDB queries",
-    icon: React.createElement(CgWorkAlt),
-    date: "June 2022- August 2022",
-  },
-  {
-    title: "AI Engineer intern at Huawei Türkiye",
+    title: "Software Engineer Lead at Yuppo(Insider)",
     location: "Istanbul, TR",
     description:
-      "Developed a recommendation algorithm using the PyTorch DeepFM model, enhancing customer engagement through personalized content and product suggestions",
+      "Working on the development of a deployed virtual assistant for parents, focusing on cloud and backend.",
     icon: React.createElement(CgWorkAlt),
-    date: "June 2023- August 2023",
+    date: "June 2024 - Present",
+  },
+  {
+    title: "Part-time AI Researcher at United Nations Development Programme",
+    location: "Istanbul, TR",
+    description:
+      "Researched and developed AI models for the United Nations Development Programme, focusing on environmental risks including drought, floods, and food security.",
+    icon: React.createElement(CgWorkAlt),
+    date: "July 2024 - Present",
+  },
+  {
+    title: "Software Engineer Intern at United Nations Development Programme",
+    location: "Istanbul, TR",
+    description:
+      "Developed a comprehensive Early Warning System (EWS) project, focused on visualizing environmental risks including drought, floods, and food security, by implementing a full-stack solution using React and Leaflet for the frontend and Python Django for the backend.",
+    icon: React.createElement(CgWorkAlt),
+    date: "April 2024 - June 2024",
   },
   {
     title:
@@ -72,20 +72,28 @@ export const experiencesData = [
     date: "October 2023 - April 2024",
   },
   {
-    title: "Software Engineer Intern at United Nations Development Programme",
+    title: "AI Engineer intern at Huawei Türkiye",
     location: "Istanbul, TR",
     description:
-      "Developed a comprehensive Early Warning System (EWS) project, focused on visualizing environmental risks including drought, floods, and food security, by implementing a full-stack solution using React and Leaflet for the frontend and Python Django for the backend.",
+      "Developed a recommendation algorithm using the PyTorch DeepFM model, enhancing customer engagement through personalized content and product suggestions",
     icon: React.createElement(CgWorkAlt),
-    date: "April 2024 - June 2024",
+    date: "June 2023- August 2023",
   },
   {
-    title: "Software Engineer Lead at Yuppo(Insider)",
-    location: "Istanbul, TR",
+    title: "Software Engineer Intern at System1",
+    location: "Los Angeles, CA",
     description:
-      "Working on the development of a deployed virtual assistant for parents, focusing on cloud and backend.",
+      "Developed production level code, working on products in .NET Core framework such as React JS, NodeJS, MongoDB queries",
     icon: React.createElement(CgWorkAlt),
-    date: "June 2024 - Present",
+    date: "June 2022- August 2022",
+  },
+  {
+    title: "Full Stack Developer Intern at HomePainter LLC",
+    location: "Des Moines, IA",
+    description:
+      "I developed production level code working on products such as NodeJS, MongoDB queries and Angular; Gained experience with both front-end and back-end development fixing bugs and implementing new features",
+    icon: React.createElement(CgWorkAlt),
+    date: "March 2021 - August 2021",
   },
 ] as const;
 
