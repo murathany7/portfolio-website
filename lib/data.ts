@@ -40,12 +40,20 @@ export const links = [
 
 export const experiencesData = [
   {
+    title: "Senior Software Engineer at TBI Bank",
+    location: "Remote",
+    description:
+      "Developing the e-commerce backend for the bank’s mobile application, building APIs and services for payments, orders, and merchant integrations.",
+    icon: React.createElement(CgWorkAlt),
+    date: "February 2026 - Present",
+  },
+  {
     title: "Software Engineer Lead at Yuppo(Insider)",
     location: "Istanbul, TR",
     description:
       "Working on the development of a deployed virtual assistant for parents, focusing on cloud and backend.",
     icon: React.createElement(CgWorkAlt),
-    date: "June 2024 - Present",
+    date: "February 2024 - February 2026",
   },
   {
     title: "Part-time AI Researcher at United Nations Development Programme",
@@ -53,7 +61,7 @@ export const experiencesData = [
     description:
       "Researched and developed AI models for the United Nations Development Programme, focusing on environmental risks including drought, floods, and food security.",
     icon: React.createElement(CgWorkAlt),
-    date: "July 2024 - Present",
+    // date: "July 2024 - S",
   },
   {
     title: "Software Engineer Intern at United Nations Development Programme",
