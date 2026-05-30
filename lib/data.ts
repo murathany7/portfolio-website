@@ -61,7 +61,7 @@ export const experiencesData = [
     description:
       "Researched and developed AI models for the United Nations Development Programme, focusing on environmental risks including drought, floods, and food security.",
     icon: React.createElement(CgWorkAlt),
-    // date: "July 2024 - S",
+    date: "July 2024 - February 2025",
   },
   {
     title: "Software Engineer Intern at United Nations Development Programme",
