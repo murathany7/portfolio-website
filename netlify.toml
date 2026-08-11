@@ -1,0 +1,6 @@
+# Turbopack's persistent build cache records env var values read at build
+# time (RESEND_API_KEY in the sendEmail server action), which trips
+# Netlify's secrets scanner. The cache is never deployed or publicly
+# served, so it's safe to exclude from scanning.
+[build.environment]
+  SECRETS_SCAN_OMIT_PATHS = ".netlify/.next/cache/**,.next/cache/**"
