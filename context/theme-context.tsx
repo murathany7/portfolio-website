@@ -32,10 +32,13 @@ export default function ThemeContextProvider({
     }
   };
 
+  // Reading the persisted theme has to happen after mount (localStorage
+  // doesn't exist during SSR), so the setState-in-effect here is intentional.
   useEffect(() => {
     const localTheme = window.localStorage.getItem("theme") as Theme | null;
 
     if (localTheme) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTheme(localTheme);
 
       if (localTheme === "dark") {
