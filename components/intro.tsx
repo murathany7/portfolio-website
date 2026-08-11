@@ -64,9 +64,9 @@ export default function Intro() {
       >
         <span className="font-bold">Hello, I'm Murathan Yildirim.</span> I'm a{" "}
         <span className="font-bold">curious developer</span> and{" "}
-        <span className="font-bold">designer</span> based in the{" "}
-        <span className="italic">best city of the world</span>,{" "}
-        <span className="underline">Istanbul, Turkey</span>.
+        <span className="font-bold">designer</span> based in{" "}
+        {/* <span className="italic">best city of the world</span>,{" "} */}
+        <span className="underline">Rotterdam, Netherlands</span>.
       </motion.h1>
 
       <motion.div

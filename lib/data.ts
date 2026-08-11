@@ -43,7 +43,7 @@ export const experiencesData = [
     title: "Senior Software Engineer at TBI Bank",
     location: "Remote",
     description:
-      "Developing the e-commerce backend for the bank’s mobile application, building APIs and services for payments, orders, and merchant integrations.",
+      "Working as a consultant for the e-commerce backend for the bank’s mobile application, building APIs and services for payments, orders, and merchant integrations.",
     icon: React.createElement(CgWorkAlt),
     date: "February 2026 - Present",
   },

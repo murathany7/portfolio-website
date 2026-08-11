@@ -29,14 +29,12 @@ export default function About() {
         in emerging fields.
         <br />
         <br />
-        Currently, I play a key role in developing a virtual assistant designed
-        for parents, where I focus primarily on the cloud and backend
-        architecture. Beyond just engineering, I take on a crucial position,
-        shaping the project's technical direction and ensuring its successful
-        deployment. This initiative is backed by a company named Insider, a
-        major player in the software industry. Bringing together my skills in
-        AI, cloud infrastructure, and blockchain, I am committed to driving
-        impactful, forward-thinking technological solutions.
+        Previously, I worked on Yuppo, a virtual assistant application designed to support parents with personalized, AI-powered assistance. My work focused primarily on backend and cloud architecture, contributing to the technical direction of the product and the systems required to bring it into production. Across these projects, I have developed strong experience in Python, backend systems, data pipelines, cloud infrastructure, and real-world AI integrations.
+
+        <br />
+        <br />
+        Currently, I work as a software engineering contractor for TBI Bank, focusing on Python backend development, data engineering, and applied AI. I build end-to-end Apache Airflow pipelines that download, process, transform, and utilize large volumes of e-commerce product data, while also integrating AI APIs to create practical solutions for automation and internal business workflows.
+
       </p>
     </motion.section>
   );
