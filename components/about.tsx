@@ -35,6 +35,10 @@ export default function About() {
         <br />
         Currently, I work as a software engineering contractor for TBI Bank, focusing on Python backend development, data engineering, and applied AI. I build end-to-end Apache Airflow pipelines that download, process, transform, and utilize large volumes of e-commerce product data, while also integrating AI APIs to create practical solutions for automation and internal business workflows.
 
+        <br />
+        <br />
+        Outside work, I build hardware. Bike Logger is a ride recorder for my own bike: a Raspberry Pi 5 with GPS, motion, wheel and ultrasonic sensors and a rear camera, held in a 3D-printed tray I designed in parametric CAD, with a FastAPI backend, a web dashboard and a Flutter app that replay every ride on one timeline.
+
       </p>
     </motion.section>
   );

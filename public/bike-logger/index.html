@@ -1,0 +1,907 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect width=%2216%22 height=%2216%22 rx=%223%22 fill=%22%2306080a%22/%3E%3Ccircle cx=%228%22 cy=%228%22 r=%223.5%22 fill=%22%23ff4a3d%22/%3E%3C/svg%3E">
+</head>
+<body>
+<title>Bike Logger</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="A ride recorder for a city bike: camera, GPS, motion, wheel speed and distance behind, on one timeline.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one fixed WebGL night scene; chapters scroll over it as sticky captions on the left (bottom on phones). */
+:root {
+  --night: #06080a;      /* road at night, a hair of blue */
+  --ink: #eceae4;        /* warm white, like a lamp on paper */
+  --dim: #868d95;        /* asphalt grey */
+  --line: #262b31;
+  --lamp: #ffc46e;       /* dynamo headlight */
+  --signal: #84dcff;     /* sensor readings */
+  --brake: #ff4a3d;      /* rear light */
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: dark;
+}
+html { background: var(--night); }
+body { background: var(--night); color: var(--ink); font-family: var(--display); font-size: 16px; line-height: 1.45; overflow-x: hidden; }
+
+#scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
+.scrim { position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--night) 78%, transparent) 0%, transparent 46%); }
+
+main { position: relative; z-index: 2; }
+.ch { min-height: 170vh; min-height: 170svh; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.card { position: sticky; top: 30vh; max-width: 30rem; padding-left: clamp(0px, 4vw, 56px); display: grid; gap: 14px; }
+
+.eyebrow { margin: 0; font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--signal); }
+h1, h2 { margin: 0; font-weight: 800; font-variation-settings: "wdth" 125; line-height: .92; letter-spacing: -.02em; text-wrap: balance; }
+h1 { font-size: clamp(3.2rem, 11vw, 10.5rem); font-weight: 900; }
+h2 { font-size: clamp(2.5rem, 6.4vw, 5.6rem); }
+.lede { margin: 0; font-size: clamp(1.05rem, 1.6vw, 1.3rem); color: var(--ink); opacity: .82; font-variation-settings: "wdth" 100; max-width: 26rem; }
+.w { display: inline-block; transition: none; will-change: opacity, transform; }
+
+.chips { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.chips li { font-family: var(--mono); font-size: 12px; padding: 5px 9px; border: 1px solid var(--line); border-radius: 2px; color: var(--dim); background: color-mix(in srgb, var(--night) 60%, transparent); font-variant-numeric: tabular-nums; }
+
+/* Hero */
+.hero .card { top: auto; position: relative; padding-top: 52vh; max-width: none; }
+.hero h1 .glow { color: var(--lamp); }
+.hint { font-family: var(--mono); font-size: 12px; color: var(--dim); letter-spacing: .12em; text-transform: uppercase; display: flex; align-items: center; gap: 10px; }
+.hint::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--brake); box-shadow: 0 0 12px var(--brake); animation: blink 1s steps(2, jump-none) infinite; }
+@keyframes blink { 50% { opacity: .15; } }
+
+/* Labels pinned to the 3D scene */
+#labels { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
+.tag { position: absolute; left: 0; top: 0; font-family: var(--mono); font-size: 12px; color: var(--ink); white-space: nowrap; opacity: 0; }
+.tag i { position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--signal); }
+.tag span { position: absolute; left: 28px; top: -34px; padding: 3px 7px; background: color-mix(in srgb, var(--night) 82%, transparent); border: 1px solid var(--line); }
+.tag b { position: absolute; left: 3px; top: -16px; width: 26px; height: 1px; background: var(--signal); transform-origin: left; transform: rotate(-36deg); }
+.tag.flip span { left: auto; right: 28px; }
+.tag.flip b { left: auto; right: 3px; transform-origin: right; transform: rotate(36deg); }
+
+/* Instrument readout */
+#hud { position: fixed; z-index: 3; right: max(24px, env(safe-area-inset-right, 0px)); bottom: calc(28px + env(safe-area-inset-bottom, 0px)); text-align: right; opacity: 0; pointer-events: none; font-variant-numeric: tabular-nums; }
+#hud .k { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; color: var(--signal); }
+#hud .v { font-weight: 800; font-variation-settings: "wdth" 62; font-size: clamp(3.4rem, 8vw, 6.5rem); line-height: 1; letter-spacing: -.01em; }
+#hud .v small { font-size: .3em; font-weight: 500; color: var(--dim); margin-left: .25em; font-variation-settings: "wdth" 100; }
+#hud .s { font-family: var(--mono); font-size: 12px; color: var(--dim); }
+#hud.alert .v { color: var(--brake); }
+
+/* Chapter rail */
+#rail { position: fixed; z-index: 3; right: max(24px, env(safe-area-inset-right, 0px)); top: 50%; transform: translateY(-50%); display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+#rail a { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); text-decoration: none; display: flex; align-items: center; justify-content: flex-end; gap: 10px; opacity: .55; transition: opacity .3s, color .3s; }
+#rail a::after { content: ""; width: 14px; height: 1px; background: currentColor; transition: width .3s; }
+#rail a.on { color: var(--ink); opacity: 1; }
+#rail a.on::after { width: 30px; background: var(--lamp); }
+#rail a:focus-visible { outline: 1px solid var(--lamp); outline-offset: 4px; }
+
+/* Replay mock */
+.replay { box-sizing: border-box; margin-top: 10px; width: 100%; max-width: 640px; border: 1px solid var(--line); background: color-mix(in srgb, var(--night) 86%, transparent); padding: 14px; display: grid; grid-template-columns: 132px 1fr; gap: 14px; font-family: var(--mono); font-size: 11px; color: var(--dim); }
+.replay .map { grid-row: span 2; border: 1px solid var(--line); aspect-ratio: 1; max-width: 100%; }
+.replay .now { color: var(--ink); font-variant-numeric: tabular-nums; display: flex; flex-wrap: wrap; gap: 4px 14px; align-self: start; }
+.replay .now b { font-weight: 500; color: var(--lamp); }
+.tracks { position: relative; display: grid; gap: 6px; min-width: 0; }
+.tracks .row { display: grid; grid-template-columns: 54px 1fr; align-items: center; gap: 8px; }
+.tracks svg { width: 100%; height: 30px; display: block; }
+.tracks .scrub { position: absolute; top: -4px; bottom: -4px; width: 1px; background: var(--lamp); box-shadow: 0 0 8px var(--lamp); left: 62px; }
+
+/* Specs */
+.specs { min-height: auto; padding-block: 30vh 18vh; }
+.specs .inner { max-width: 1100px; margin: 0 auto; display: grid; gap: 34px; background: color-mix(in srgb, var(--night) 82%, transparent); padding: clamp(20px, 4vw, 48px); border-top: 1px solid var(--line); }
+.specs dl { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0; border-top: 1px solid var(--line); }
+.specs dl div { padding: 16px 0 18px; border-bottom: 1px solid var(--line); display: grid; gap: 4px; padding-right: 20px; }
+.specs dt { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--signal); }
+.specs dd { margin: 0; font-size: 1.1rem; font-variation-settings: "wdth" 110; font-weight: 600; }
+.specs dd span { display: block; font-size: .85rem; font-weight: 400; color: var(--dim); font-variation-settings: "wdth" 100; }
+.foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-family: var(--mono); font-size: 12px; color: var(--dim); }
+.foot strong { color: var(--ink); font-weight: 500; }
+
+.no3d #scene { display: none; }
+.no3d body, body.no3d { background: radial-gradient(60% 50% at 70% 60%, #1a1712 0%, var(--night) 70%); }
+
+@media (max-width: 860px) {
+  .scrim { background: linear-gradient(0deg, color-mix(in srgb, var(--night) 88%, transparent) 0%, transparent 52%); }
+  .card { top: auto; bottom: 0; position: sticky; padding-left: 0; padding-bottom: calc(26px + env(safe-area-inset-bottom, 0px)); }
+  .ch { display: flex; flex-direction: column; justify-content: flex-end; }
+  .ch:not(.hero):not(.specs) { padding-bottom: 0; }
+  .hero .card { padding-top: 0; padding-bottom: 14vh; }
+  .hero { min-height: 100vh; min-height: 100svh; }
+  .tag { font-size: 11px; }
+  h2 { font-size: clamp(2.2rem, 11vw, 3.2rem); }
+  .lede { font-size: 1rem; }
+  #rail { display: none; }
+  #hud { top: calc(18px + env(safe-area-inset-top, 0px)); bottom: auto; }
+  .replay { grid-template-columns: 1fr; }
+  .replay .map { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hint::before { animation: none; }
+}
+</style>
+
+<canvas id="scene" aria-hidden="true"></canvas>
+<div class="scrim"></div>
+<div id="labels" aria-hidden="true"></div>
+<div id="hud" aria-live="off"><div class="k">BEHIND</div><div class="v">4.80<small>m</small></div><div class="s">&nbsp;</div></div>
+<ul id="rail" aria-label="Chapters">
+  <li><a href="#bike">Bike</a></li><li><a href="#box">Box</a></li><li><a href="#camera">Camera</a></li>
+  <li><a href="#distance">Distance</a></li><li><a href="#wheel">Wheel</a></li><li><a href="#lean">Lean</a></li><li><a href="#replay">Replay</a></li>
+</ul>
+
+<main>
+  <section class="ch hero" id="top">
+    <div class="card">
+      <p class="eyebrow">Ride recorder for a city bike</p>
+      <h1>Bike<br><span class="glow">Logger</span></h1>
+      <p class="lede">Records the whole ride.</p>
+      <p class="hint">Scroll to switch the lights on</p>
+    </div>
+  </section>
+
+  <section class="ch" id="bike">
+    <div class="card">
+      <p class="eyebrow">Gazelle Vento C7 · 28″</p>
+      <h2 class="split">Your bike. One box.</h2>
+      <p class="lede split">Nothing changes but the rack.</p>
+    </div>
+  </section>
+
+  <section class="ch" id="box">
+    <div class="card">
+      <p class="eyebrow">IP65 · 200 × 120 × 75 mm</p>
+      <h2 class="split">Everything inside.</h2>
+      <p class="lede split">Pi 5, GPS and motion sensor on a printed tray.</p>
+      <ul class="chips"><li>Raspberry Pi 5</li><li>GPS</li><li>BNO085</li><li>ASA+ tray</li></ul>
+    </div>
+  </section>
+
+  <section class="ch" id="camera">
+    <div class="card">
+      <p class="eyebrow">Camera Module 3 Wide</p>
+      <h2 class="split">Eyes behind.</h2>
+      <p class="lede split">Sealed under the rack, filming the road you left.</p>
+      <ul class="chips"><li>102° view</li><li>Sealed window</li><li>Aim by hand</li></ul>
+    </div>
+  </section>
+
+  <section class="ch" id="distance">
+    <div class="card">
+      <p class="eyebrow">Ultrasonic · rear</p>
+      <h2 class="split">Every overtake.</h2>
+      <p class="lede split">How close the car behind came, logged with the video.</p>
+      <ul class="chips"><li>Waterproof probes</li><li>Logged in metres</li></ul>
+    </div>
+  </section>
+
+  <section class="ch" id="wheel">
+    <div class="card">
+      <p class="eyebrow">Hall sensor · spoke magnet</p>
+      <h2 class="split">Every turn.</h2>
+      <p class="lede split">Speed and distance from the wheel, even without GPS.</p>
+      <ul class="chips"><li>Left seatstay</li><li>1 pulse per turn</li></ul>
+    </div>
+  </section>
+
+  <section class="ch" id="lean">
+    <div class="card">
+      <p class="eyebrow">BNO085 · 9-axis</p>
+      <h2 class="split">Every lean.</h2>
+      <p class="lede split">Corners, potholes, hard brakes.</p>
+      <ul class="chips"><li>Lean</li><li>Pitch</li><li>Acceleration</li></ul>
+    </div>
+  </section>
+
+  <section class="ch" id="replay">
+    <div class="card">
+      <p class="eyebrow">Dashboard · phone app</p>
+      <h2 class="split">One timeline.</h2>
+      <p class="lede split">Scrub once. Everything moves together.</p>
+      <div class="replay" aria-label="Sample ride replay">
+        <svg class="map" id="map" viewBox="0 0 100 100" role="img" aria-label="Route map"></svg>
+        <div class="now" id="now"></div>
+        <div class="tracks" id="tracks"><div class="scrub" id="scrub"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ch specs" id="specs">
+    <div class="inner">
+      <h2>What's in it.</h2>
+      <dl>
+        <div><dt>Brain</dt><dd>Raspberry Pi 5<span>8 GB, active cooler</span></dd></div>
+        <div><dt>Camera</dt><dd>Camera Module 3 Wide<span>102° across, rear-facing</span></dd></div>
+        <div><dt>Position</dt><dd>USB GPS<span>u-blox, antenna up</span></dd></div>
+        <div><dt>Motion</dt><dd>BNO085<span>Lean, pitch, acceleration</span></dd></div>
+        <div><dt>Behind</dt><dd>Ultrasonic<span>Waterproof probes</span></dd></div>
+        <div><dt>Wheel</dt><dd>A3144 Hall sensor<span>Spoke magnet, left seatstay</span></dd></div>
+        <div><dt>Enclosure</dt><dd>IP65 box<span>200 × 120 × 75 mm</span></dd></div>
+        <div><dt>Tray</dt><dd>3D-printed ASA+<span>Parametric CAD</span></dd></div>
+        <div><dt>Power</dt><dd>20 000 mAh<span>45 W, own housing</span></dd></div>
+      </dl>
+      <div class="foot"><strong>Runs offline. Your rides stay with you.</strong><span>Rendered from the real CAD parts</span></div>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
+<script src="/bike-logger/parts.js"></script>
+<script>
+(function () {
+"use strict";
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const SMALL = matchMedia("(max-width: 860px), (pointer: coarse)").matches;   // phones and tablets: lighter rendering
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const band = (i, s) => smooth(i - 0.15, i + 0.3, s) * (1 - smooth(i + 0.75, i + 1.1, s));
+
+/* ---------- Words: split headings into words that rise as their chapter arrives ---------- */
+const sections = [...document.querySelectorAll(".ch")];
+document.querySelectorAll(".split").forEach(el => {
+  el.innerHTML = el.textContent.split(" ").map(w => `<span class="w">${w}</span>`).join(" ");
+});
+function revealWords(scrollY, vh) {
+  sections.forEach(sec => {
+    const words = sec.querySelectorAll(".w");
+    if (!words.length) return;
+    const q = (scrollY + vh - sec.offsetTop) / (vh * 0.9);
+    words.forEach((w, k) => {
+      const t = REDUCED ? 1 : smooth(0.15 + k * 0.07, 0.45 + k * 0.07, q);
+      w.style.opacity = (0.12 + 0.88 * t).toFixed(3);
+      w.style.transform = `translateY(${((1 - t) * 0.35).toFixed(3)}em)`;
+    });
+  });
+}
+
+/* ---------- Replay mock: a sample ride, drawn once ---------- */
+const N = 300, RIDE_S = 14 * 60;
+const ride = (() => {
+  const sp = [], le = [], be = [], xy = [];
+  let x = 0, y = 0, h = -0.6;
+  const turns = [38, 96, 150, 205, 262], passes = [62, 128, 184, 238];
+  for (let i = 0; i < N; i++) {
+    let v = 21 + 4 * Math.sin(i / 23) + 2 * Math.sin(i / 6.1);
+    if (i > 140 && i < 150) v *= (Math.abs(i - 145) / 5) ** 1.5;          // traffic light
+    let l = 2.5 * Math.sin(i / 3.7);
+    turns.forEach((c, k) => { l += (k % 2 ? -1 : 1) * 17 * Math.exp(-(((i - c) / 4) ** 2)); });
+    let b = 4.5;
+    passes.forEach((c, k) => { const d = 1.0 + 0.22 * k + 0.09 * (i - c) ** 2; b = Math.min(b, d); });
+    h += l * 0.0042; x += Math.cos(h) * v; y += Math.sin(h) * v;
+    sp.push(v); le.push(l); be.push(b); xy.push([x, y]);
+  }
+  return { sp, le, be, xy };
+})();
+const tracks = document.getElementById("tracks");
+function spark(arr, lo, hi, color, fill, extra) {
+  const pts = arr.map((v, i) => `${(i / (N - 1) * 600).toFixed(1)},${(30 - (v - lo) / (hi - lo) * 28 - 1).toFixed(1)}`).join(" ");
+  return `<svg viewBox="0 0 600 30" preserveAspectRatio="none">${fill ? `<polygon points="0,30 ${pts} 600,30" fill="${color}" opacity=".12"/>` : ""}<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.4" vector-effect="non-scaling-stroke"/>${extra || ""}</svg>`;
+}
+const cs = getComputedStyle(document.documentElement);
+const C = n => cs.getPropertyValue(n).trim();
+(function drawReplay() {
+  let thumbs = "";
+  for (let k = 0; k < 12; k++) {
+    const x0 = k * 50, car = [62, 128, 184, 238].some(c => Math.abs(c - k * 25 - 12) < 12);
+    thumbs += `<rect x="${x0 + 1}" y="1" width="48" height="28" fill="#0d1014" stroke="${C("--line")}"/>`
+      + `<polygon points="${x0 + 18},29 ${x0 + 32},29 ${x0 + 26},12 ${x0 + 24},12" fill="#1c2026"/>`
+      + (car ? `<circle cx="${x0 + 22}" cy="17" r="1.6" fill="${C("--ink")}"/><circle cx="${x0 + 28}" cy="17" r="1.6" fill="${C("--ink")}"/>` : "");
+  }
+  const close = ride.be.map((v, i) => v < 1.5 ? `<line x1="${i / (N - 1) * 600}" x2="${i / (N - 1) * 600}" y1="0" y2="30" stroke="${C("--brake")}" stroke-width="2" opacity=".5"/>` : "").join("");
+  tracks.insertAdjacentHTML("beforeend",
+    `<div class="row"><span>Video</span><svg viewBox="0 0 600 30" preserveAspectRatio="none">${thumbs}</svg></div>` +
+    `<div class="row"><span>km/h</span>${spark(ride.sp, 0, 30, C("--lamp"), true)}</div>` +
+    `<div class="row"><span>Lean °</span>${spark(ride.le, -22, 22, C("--signal"), false, '<line x1="0" x2="600" y1="15" y2="15" stroke="#262b31"/>')}</div>` +
+    `<div class="row"><span>Behind</span>${spark(ride.be, 0, 5, C("--ink"), true, close)}</div>`);
+  const xs = ride.xy.map(p => p[0]), ys = ride.xy.map(p => p[1]);
+  const mx = Math.min(...xs), Mx = Math.max(...xs), my = Math.min(...ys), My = Math.max(...ys), sc = 84 / Math.max(Mx - mx, My - my);
+  ride.pts = ride.xy.map(p => [8 + (p[0] - mx) * sc, 92 - (p[1] - my) * sc]);
+  document.getElementById("map").innerHTML =
+    `<polyline points="${ride.pts.map(p => p.map(v => v.toFixed(1)).join(",")).join(" ")}" fill="none" stroke="${C("--dim")}" stroke-width="1.2"/>` +
+    `<polyline id="mapDone" fill="none" stroke="${C("--lamp")}" stroke-width="1.8"/><circle id="mapDot" r="2.6" fill="${C("--lamp")}"/>`;
+})();
+const scrub = document.getElementById("scrub"), nowEl = document.getElementById("now");
+let lastIdx = -1;
+function updateReplay(q) {
+  const f = smooth(0.05, 0.95, q), i = Math.round(f * (N - 1));
+  const w = tracks.clientWidth - 62;
+  scrub.style.left = `${62 + f * w}px`;
+  if (i === lastIdx) return;
+  lastIdx = i;
+  const t = Math.round(f * RIDE_S), b = ride.be[i];
+  nowEl.innerHTML = `<span><b>${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}</b></span><span>${ride.sp[i].toFixed(1)} km/h</span><span>lean ${ride.le[i] >= 0 ? " " : ""}${ride.le[i].toFixed(0)}°</span><span${b < 1.5 ? ` style="color:${C("--brake")}"` : ""}>behind ${b > 4.4 ? "clear" : b.toFixed(2) + " m"}</span>`;
+  const p = ride.pts[i];
+  document.getElementById("mapDot").setAttribute("cx", p[0]);
+  document.getElementById("mapDot").setAttribute("cy", p[1]);
+  document.getElementById("mapDone").setAttribute("points", ride.pts.slice(0, i + 1).map(p => p.map(v => v.toFixed(1)).join(",")).join(" "));
+}
+
+/* ---------- Chapter rail ---------- */
+const rail = document.getElementById("rail"), railLinks = [...rail.querySelectorAll("a")];
+railLinks.forEach(a => a.addEventListener("click", e => {
+  e.preventDefault();
+  const sec = document.querySelector(a.getAttribute("href"));
+  window.scrollTo({ top: sec.offsetTop + innerHeight * 0.25, behavior: REDUCED ? "auto" : "smooth" });
+}));
+
+/* scroll -> s: chapter index plus progress, measured at the middle of the viewport */
+function scrollS() {
+  const mid = scrollY + innerHeight * 0.5;
+  for (let i = sections.length - 1; i >= 0; i--) {
+    const top = sections[i].offsetTop;
+    if (mid >= top) return i + Math.min(1, (mid - top) / sections[i].offsetHeight);
+  }
+  return 0;
+}
+
+if (!window.THREE || !window.BIKE_PARTS) {
+  document.documentElement.classList.add("no3d");
+  const tick = () => { revealWords(scrollY, innerHeight); updateReplay(clamp(scrollS() - 7, 0, 1)); requestAnimationFrame(tick); };
+  tick();
+  return;
+}
+
+/* =====================================================================
+   3D scene. Units: metres. Bike faces +X, up is +Y, left side is -Z.
+   Geometry from the Gazelle Vento C7 sheet (L 57): wheelbase 1121,
+   chainstay 471, BB drop 60, head 70.5°, seat 71.5°, 37-622 tyres.
+   ===================================================================== */
+const V = (x, y, z = 0) => new THREE.Vector3(x, y, z);
+const canvas = document.getElementById("scene");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
+let DPR = Math.min(devicePixelRatio, 2);
+renderer.setPixelRatio(DPR);
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+const NIGHT = new THREE.Color(C("--night"));
+scene.background = NIGHT;
+scene.fog = new THREE.Fog(NIGHT, 5, 16);
+const camera = new THREE.PerspectiveCamera(34, 1, 0.02, 60);
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+
+const envMats = [];
+function std(color, rough, metal, extra) {
+  const m = new THREE.MeshStandardMaterial(Object.assign({ color, roughness: rough, metalness: metal }, extra || {}));
+  envMats.push(m);
+  return m;
+}
+const M = {
+  frame: std(0x24302c, 0.32, 0.65),
+  alu: std(0xb9bec4, 0.28, 0.95),
+  dark: std(0x17191c, 0.55, 0.4),
+  rubber: std(0x0d0e0f, 0.9, 0.0),
+  saddle: std(0x1c1714, 0.6, 0.0),
+  print: std(0xcfc7b4, 0.65, 0.0, { flatShading: true }),
+  boxShell: std(0x5f656c, 0.45, 0.05, { transparent: true, opacity: 1 }),
+  boxLid: std(0x5f656c, 0.45, 0.05, { transparent: true, opacity: 1 }),
+};
+M.floor = new THREE.MeshStandardMaterial({ color: 0x07080a, roughness: 0.78, metalness: 0.0, envMapIntensity: 0 });
+const SIGNAL = new THREE.Color(C("--signal"));
+const ghostFill = new THREE.MeshBasicMaterial({ color: SIGNAL, transparent: true, opacity: 0.14, blending: THREE.AdditiveBlending, depthWrite: false });
+const ghostEdge = new THREE.LineBasicMaterial({ color: SIGNAL, transparent: true, opacity: 0.9 });
+
+function shadowy(o) { o.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } }); return o; }
+function tube(a, b, r, mat, seg = 14) {
+  const d = b.clone().sub(a), m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, d.length(), seg), mat);
+  m.position.copy(a).add(b).multiplyScalar(0.5);
+  m.quaternion.setFromUnitVectors(V(0, 1, 0), d.normalize());
+  return m;
+}
+function bentTube(pts, r, mat) {
+  return new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 48, r, 10), mat);
+}
+
+/* CAD meshes: Int16 in 0.1 mm. `cyc` maps CAD (x, y, z) to scene (y, z, x): the long axis of the tray and the
+   camera's viewing axis both run along the bike. */
+function bytes(s) { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u.buffer; }
+function cad(c, cyc) {
+  const q = new Int16Array(bytes(c.v)), p = new Float32Array(q.length);
+  for (let i = 0; i < q.length; i += 3) {
+    const x = q[i] * 1e-4, y = q[i + 1] * 1e-4, z = q[i + 2] * 1e-4;
+    if (cyc) { p[i] = y; p[i + 1] = z; p[i + 2] = x; } else { p[i] = x; p[i + 1] = y; p[i + 2] = z; }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(p, 3));
+  g.setIndex(new THREE.BufferAttribute(new Uint16Array(bytes(c.t)), 1));
+  g.computeVertexNormals();
+  g.computeBoundingBox();
+  if (c.kind === "ghost") {
+    const grp = new THREE.Group();
+    grp.add(new THREE.Mesh(g, ghostFill));
+    grp.add(new THREE.LineSegments(new THREE.EdgesGeometry(g, 28), ghostEdge));
+    grp.userData.box = g.boundingBox;
+    return grp;
+  }
+  const m = new THREE.Mesh(g, M.print);
+  m.castShadow = m.receiveShadow = true;
+  m.userData.box = g.boundingBox;
+  return m;
+}
+const centerOf = o => o.userData.box.getCenter(new THREE.Vector3());
+
+/* ---------- Ground and road ---------- */
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), M.floor);
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+const DASH = 3.0, dashes = new THREE.InstancedMesh(new THREE.PlaneGeometry(1.2, 0.08), new THREE.MeshBasicMaterial({ color: 0x1a1d21 }), 14);
+scene.add(dashes);
+const dm = new THREE.Matrix4(), dq = new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), -Math.PI / 2);
+
+/* ---------- The bike ---------- */
+const R = 0.348;                                   // 622 bead + 37 tyre
+const RA = V(0, R), FA = V(1.121, R), BB = V(0.467, R - 0.060);
+const ST_TOP = V(0.286, 0.828), HT_TOP = V(0.854, 0.950), HT_BOT = V(0.909, 0.794);
+const SS_TOP = V(0.300, 0.780);
+const bike = new THREE.Group(); scene.add(bike);
+const B = new THREE.Group(); bike.add(B);         // everything that leans
+
+function wheel(c) {
+  const w = new THREE.Group(); w.position.copy(c);
+  const spin = new THREE.Group(); w.add(spin);
+  spin.add(new THREE.Mesh(new THREE.TorusGeometry(0.3295, 0.0185, 14, 120), M.rubber));
+  spin.add(new THREE.Mesh(new THREE.TorusGeometry(0.303, 0.0075, 8, 120), M.alu));
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.11, 18), M.alu);
+  hub.rotation.x = Math.PI / 2; spin.add(hub);
+  const v = [];
+  for (let k = 0; k < 36; k++) {
+    const side = k % 2 ? 1 : -1, a = (k / 36) * Math.PI * 2, b = a + ((k >> 1) % 2 ? 0.42 : -0.42);
+    v.push(0.028 * Math.cos(a), 0.028 * Math.sin(a), 0.03 * side, 0.298 * Math.cos(b), 0.298 * Math.sin(b), 0.0);
+  }
+  const sg = new THREE.BufferGeometry(); sg.setAttribute("position", new THREE.Float32BufferAttribute(v, 3));
+  spin.add(new THREE.LineSegments(sg, new THREE.LineBasicMaterial({ color: 0x8d949b })));
+  B.add(shadowy(w));
+  return spin;
+}
+const rearSpin = wheel(RA), frontSpin = wheel(FA);
+{ // Nexus 7 hub shell and roller brake on the left
+  const n = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.07, 24), M.alu); n.rotation.x = Math.PI / 2; n.position.copy(RA); B.add(n);
+  const rb = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.018, 24), M.dark); rb.rotation.x = Math.PI / 2; rb.position.set(0, R, -0.06); B.add(rb);
+}
+const frame = new THREE.Group(); B.add(frame);
+frame.add(tube(BB, V(0.905, 0.815), 0.022, M.frame));                      // down tube
+frame.add(tube(V(0.296, 0.80), V(0.862, 0.93), 0.018, M.frame));           // top tube
+frame.add(tube(BB, ST_TOP, 0.016, M.frame));                                 // seat tube
+frame.add(tube(HT_BOT, HT_TOP, 0.024, M.frame));                             // head tube
+for (const z of [-1, 1]) {
+  frame.add(tube(V(BB.x, BB.y, 0.03 * z), V(0, R, 0.0675 * z), 0.009, M.frame));          // chainstays
+  frame.add(tube(V(SS_TOP.x, SS_TOP.y, 0.02 * z), V(0, R, 0.0675 * z), 0.008, M.frame));  // seatstays
+  frame.add(tube(V(0.925, 0.77, 0.05 * z), V(0.99, 0.585, 0.05 * z), 0.015, M.alu));      // fork stanchions
+  frame.add(tube(V(0.99, 0.585, 0.05 * z), FA.clone().setZ(0.05 * z), 0.019, M.dark));     // fork lowers
+}
+frame.add(tube(V(0.915, 0.775, -0.06), V(0.935, 0.775, 0.06), 0.02, M.dark));             // crown
+{ // seatpost, saddle, stem, swept city bar
+  const up = ST_TOP.clone().sub(BB).normalize();
+  frame.add(tube(ST_TOP, ST_TOP.clone().addScaledVector(up, 0.2), 0.0135, M.alu));
+  const sad = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 14), M.saddle);
+  sad.scale.set(0.135, 0.035, 0.085); sad.position.set(0.205, 1.035, 0); frame.add(sad);
+  const st = HT_TOP.clone().add(V(-0.022, 0.065));
+  frame.add(tube(HT_TOP, st, 0.014, M.alu));
+  frame.add(tube(st, V(0.89, 1.05), 0.013, M.alu));
+  frame.add(bentTube([V(0.74, 1.07, -0.30), V(0.80, 1.062, -0.25), V(0.87, 1.05, -0.12), V(0.89, 1.05, 0), V(0.87, 1.05, 0.12), V(0.80, 1.062, 0.25), V(0.74, 1.07, 0.30)], 0.011, M.alu));
+  for (const z of [-1, 1]) frame.add(tube(V(0.765, 1.068, 0.27 * z), V(0.72, 1.072, 0.33 * z), 0.017, M.saddle));
+}
+for (const [c, from, arc] of [[RA, 0.25, 3.25], [FA, -0.55, 2.75]]) {   // mudguards
+  const f = new THREE.Mesh(new THREE.TorusGeometry(0.372, 0.012, 6, 64, arc), M.dark);
+  f.position.copy(c); f.rotation.z = from; f.scale.z = 2.4; B.add(f);
+}
+{ // closed chain case on the right (drive) side
+  const pts = [];
+  for (let k = 0; k < 40; k++) { const a = k / 40 * Math.PI * 2; pts.push([BB.x + 0.105 * Math.cos(a), BB.y + 0.105 * Math.sin(a)], [0.07 * Math.cos(a), R + 0.07 * Math.sin(a)]); }
+  pts.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lo = [], hi = [];
+  for (const p of pts) { while (lo.length > 1 && cross(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); }
+  for (const p of pts.slice().reverse()) { while (hi.length > 1 && cross(hi[hi.length - 2], hi[hi.length - 1], p) <= 0) hi.pop(); hi.push(p); }
+  const hull = lo.slice(0, -1).concat(hi.slice(0, -1));
+  const sh = new THREE.Shape(hull.map(p => new THREE.Vector2(p[0], p[1])));
+  const g = new THREE.ExtrudeGeometry(sh, { depth: 0.02, bevelEnabled: true, bevelThickness: 0.006, bevelSize: 0.006, bevelSegments: 3 });
+  const m = new THREE.Mesh(g, M.dark); m.position.z = 0.045; B.add(m);
+}
+const crank = new THREE.Group(); crank.position.copy(BB); B.add(crank);
+for (const z of [-1, 1]) {
+  const arm = tube(V(0, 0, 0.085 * z), V(0, -0.17 * z, 0.085 * z), 0.008, M.alu); crank.add(arm);
+  const ped = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.022, 0.07), M.dark); ped.position.set(0, -0.17 * z, 0.13 * z); crank.add(ped);
+}
+
+/* Rear rack: platform 390 mm above the axle, back tube 150 mm behind it (estimates from the build notes) */
+const RACK_Y = R + 0.39, RACK_BACK = -0.155;
+const rack = new THREE.Group(); B.add(rack);
+for (const z of [-1, 1]) {
+  rack.add(tube(V(RACK_BACK, RACK_Y, 0.065 * z), V(0.26, RACK_Y, 0.065 * z), 0.005, M.dark));
+  rack.add(tube(V(RACK_BACK + 0.01, RACK_Y, 0.065 * z), V(-0.012, 0.37, 0.07 * z), 0.005, M.dark));
+  rack.add(tube(V(-0.05, RACK_Y, 0.065 * z), V(0.004, 0.37, 0.07 * z), 0.005, M.dark));
+  rack.add(tube(V(0.26, RACK_Y, 0.065 * z), V(0.30, 0.77, 0.022 * z), 0.005, M.dark));
+}
+for (const x of [RACK_BACK, -0.02, 0.12, 0.26]) rack.add(tube(V(x, RACK_Y, -0.065), V(x, RACK_Y, 0.065), 0.005, M.dark));
+rack.add(tube(V(RACK_BACK, RACK_Y, 0), V(0.26, RACK_Y, 0), 0.004, M.dark));
+
+/* Lights: dynamo headlamp on the fork crown, rear lamp on the rack */
+const lampPos = V(0.985, 0.80, 0);
+{
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.022, 0.06, 20), M.dark);
+  body.rotation.z = Math.PI / 2; body.position.copy(lampPos); B.add(body);
+}
+const lens = new THREE.Mesh(new THREE.CircleGeometry(0.023, 24), new THREE.MeshBasicMaterial({ color: new THREE.Color(C("--lamp")).multiplyScalar(4) }));
+lens.rotation.y = Math.PI / 2; lens.position.copy(lampPos).add(V(0.031, 0, 0)); B.add(lens);
+const head = new THREE.SpotLight(new THREE.Color(C("--lamp")), 3.2, 9, 0.36, 0.55, 1.4);
+head.position.copy(lampPos).add(V(0.04, 0, 0)); head.target.position.set(4.5, 0, 0);
+head.castShadow = !SMALL; head.shadow.mapSize.set(1024, 1024);
+B.add(head); B.add(head.target);
+const beam = (() => {
+  const h = 3.4, g = new THREE.ConeGeometry(1.15, h, 48, 1, true); g.translate(0, -h / 2, 0);
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { uColor: { value: new THREE.Color(C("--lamp")) }, uK: { value: 1 } },
+    vertexShader: "varying float vT; varying vec3 vN; varying vec3 vV; void main(){ vT = -position.y/3.4; vec4 mv = modelViewMatrix*vec4(position,1.); vN = normalize(normalMatrix*normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix*mv; }",
+    fragmentShader: "uniform vec3 uColor; uniform float uK; varying float vT; varying vec3 vN; varying vec3 vV; void main(){ float f = pow(1.-vT, 2.2); float e = pow(abs(dot(vN, vV)), 1.4); gl_FragColor = vec4(uColor*f*e*0.22*uK, 1.); }",
+    transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
+  });
+  const m = new THREE.Mesh(g, mat);
+  m.position.copy(lampPos).add(V(0.03, 0, 0));
+  m.quaternion.setFromUnitVectors(V(0, -1, 0), V(4.5, 0, 0).sub(lampPos).normalize());
+  B.add(m);
+  return m;
+})();
+const BRAKE = new THREE.Color(C("--brake"));
+const rearLamp = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.022, 0.07), new THREE.MeshBasicMaterial({ color: BRAKE.clone() }));
+rearLamp.position.set(RACK_BACK - 0.012, RACK_Y + 0.012, 0); B.add(rearLamp);
+const rearGlow = new THREE.PointLight(BRAKE, 0.8, 1.6, 2); rearGlow.position.set(RACK_BACK - 0.06, RACK_Y, 0); B.add(rearGlow);
+
+/* ---------- The logger: real CAD parts ---------- */
+const P = window.BIKE_PARTS;
+const BOX = { x: 0.055, floor: RACK_Y + 0.006, L: 0.2, W: 0.12, H: 0.075, t: 0.004 };
+const box = new THREE.Group(); box.position.set(BOX.x, BOX.floor, 0); B.add(box);
+{
+  const { L, W, t } = BOX, h = 0.06;
+  const slab = (sx, sy, sz, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), M.boxShell); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; box.add(m); };
+  slab(L, t, W, 0, -t / 2, 0);
+  slab(L, h, t, 0, h / 2 - t, W / 2 - t / 2); slab(L, h, t, 0, h / 2 - t, -W / 2 + t / 2);
+  slab(t, h, W - 2 * t, L / 2 - t / 2, h / 2 - t, 0); slab(t, h, W - 2 * t, -L / 2 + t / 2, h / 2 - t, 0);
+}
+const boxLid = new THREE.Mesh(new THREE.BoxGeometry(BOX.L + 0.004, 0.015, BOX.W + 0.004), M.boxLid);
+boxLid.castShadow = true; box.add(boxLid);
+const LID_Y = 0.06 - BOX.t + 0.0075;
+const tray = new THREE.Group(); box.add(tray);
+const trayParts = {};
+for (const id in P.tray) { const o = cad(P.tray[id], true); trayParts[id] = o; tray.add(o); }
+const explodeLift = { pi_case: 0.07, gps_rx: 0.06, breadboard: 0.07, imu_board: 0.05, imu_lid: 0.08, us_shell: 0.06 };
+
+const camHousing = new THREE.Group(); B.add(camHousing);
+for (const id in P.camera_housing) camHousing.add(cad(P.camera_housing[id], true));
+camHousing.position.set(RACK_BACK - 0.0121, RACK_Y - 0.0254, 0);         // CAD rack tube centre (y 12.1, z 25.4) onto the back tube
+const LENS = V(RACK_BACK - 0.0121 - 0.0005, RACK_Y - 0.0254 + 0.0005, 0);
+
+const probes = [];
+for (const z of [-1, 1]) {
+  const g = new THREE.Group(); g.position.set(-0.137, RACK_Y - 0.034, 0.096 * z); B.add(g);
+  for (const id in P.ultrasonic_box) g.add(cad(P.ultrasonic_box[id], true));
+  const pr = new THREE.Mesh(new THREE.CylinderGeometry(0.0115, 0.0115, 0.024, 20), M.dark);
+  pr.rotation.z = Math.PI / 2; pr.position.set(-0.145, RACK_Y - 0.045, 0.06 * z); B.add(pr);
+  const face = new THREE.Mesh(new THREE.CircleGeometry(0.0095, 20), M.alu);
+  face.rotation.y = -Math.PI / 2; face.position.set(-0.1575, RACK_Y - 0.045, 0.06 * z); B.add(face);
+  probes.push(V(-0.16, RACK_Y - 0.045, 0.06 * z));
+}
+
+/* Wheel sensor on the left seatstay, 140 mm up from the axle. CAD: stay along z, sensor towards +x. */
+const STAY_U = SS_TOP.clone().sub(RA).normalize(), STAY_LEN = SS_TOP.distanceTo(RA), WS_ALONG = 0.14;
+const wsPos = RA.clone().addScaledVector(STAY_U, WS_ALONG).setZ(-(0.0675 - 0.0475 * WS_ALONG / STAY_LEN));
+const ws = new THREE.Group(); ws.position.copy(wsPos);
+ws.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(V(0, 0, 1), V(STAY_U.y, -STAY_U.x, 0), V(STAY_U.x, STAY_U.y, 0)));
+for (const id in P.wheel_sensor) ws.add(cad(P.wheel_sensor[id], false));
+const led = new THREE.Mesh(new THREE.SphereGeometry(0.0022, 10, 8), new THREE.MeshBasicMaterial({ color: BRAKE.clone() }));
+led.position.set(0.031, 0.006, 0.019); ws.add(led);
+B.add(ws);
+const MAG_A = Math.atan2(STAY_U.y, STAY_U.x);
+const magnet = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.012, 16), std(0x9aa2aa, 0.3, 0.9));
+magnet.rotation.x = Math.PI / 2; magnet.position.set(WS_ALONG * Math.cos(MAG_A), WS_ALONG * Math.sin(MAG_A), -0.014);
+rearSpin.add(magnet);
+
+shadowy(frame); shadowy(rack); shadowy(camHousing); shadowy(ws);
+
+/* ---------- Sensing visuals ---------- */
+const fov = (() => {   // 102° x 67° view cone of the Camera Module 3 Wide, 0.85 m long
+  const L = 0.6, hx = Math.tan(51 * Math.PI / 180) * L, hy = Math.tan(33.5 * Math.PI / 180) * L;
+  const c = [V(-L, hy, hx), V(-L, hy, -hx), V(-L, -hy, -hx), V(-L, -hy, hx)];
+  const pos = [], col = [], lp = [], lc = [], cs = SIGNAL;
+  for (let k = 0; k < 4; k++) {
+    const a = c[k], b = c[(k + 1) % 4];
+    pos.push(0, 0, 0, a.x, a.y, a.z, b.x, b.y, b.z); col.push(cs.r * .07, cs.g * .07, cs.b * .07, 0, 0, 0, 0, 0, 0);
+    lp.push(0, 0, 0, a.x, a.y, a.z); lc.push(cs.r * .6, cs.g * .6, cs.b * .6, 0, 0, 0);
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  const lg = new THREE.BufferGeometry(); lg.setAttribute("position", new THREE.Float32BufferAttribute(lp, 3)); lg.setAttribute("color", new THREE.Float32BufferAttribute(lc, 3));
+  const grp = new THREE.Group();
+  const fm = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, opacity: 0 });
+  const lm = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, opacity: 0 });
+  grp.add(new THREE.Mesh(g, fm), new THREE.LineSegments(lg, lm));
+  grp.position.copy(LENS); B.add(grp);
+  grp.userData.mats = [fm, lm];
+  return grp;
+})();
+
+const rings = [];
+const ringGeo = new THREE.TorusGeometry(0.03, 0.0016, 6, 40);
+for (let k = 0; k < 24; k++) {
+  const m = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: SIGNAL, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+  m.rotation.y = Math.PI / 2; m.visible = false; bike.add(m); rings.push({ m, age: 99, probe: 0 });
+}
+
+/* A car coming up from behind */
+const car = new THREE.Group(); scene.add(car);
+{
+  const paint = std(0x1a1e24, 0.35, 0.6);
+  const body = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.72, 1.76), paint); body.position.set(-2.1, 0.62, 0); car.add(body);
+  const cab = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.5, 1.58), paint); cab.position.set(-2.35, 1.22, 0); car.add(cab);
+  for (const z of [-1, 1]) {
+    const hl = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.08, 0.3), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xfff3e0).multiplyScalar(5) }));
+    hl.position.set(0.005, 0.72, 0.62 * z); car.add(hl);
+    for (const x of [-0.75, -3.4]) {
+      const tw = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.22, 20), M.rubber); tw.rotation.x = Math.PI / 2; tw.position.set(x, 0.32, 0.8 * z); car.add(tw);
+    }
+  }
+  const beamC = new THREE.SpotLight(0xfff1dc, 4, 14, 0.42, 0.5, 1.2); beamC.position.set(0.1, 0.7, 0); beamC.target.position.set(6, 0.3, 0);
+  car.add(beamC, beamC.target); car.userData.light = beamC;
+  shadowy(car);
+}
+
+/* ---------- Lighting ---------- */
+const hemi = new THREE.HemisphereLight(0x8fa3b8, 0x050608, 0.05); scene.add(hemi);
+const key = new THREE.SpotLight(0xf3efe6, 0, 14, 0.42, 0.75, 1.2);
+key.position.set(0.9, 4.6, -1.6); key.target.position.set(0.5, 0.45, 0);
+key.castShadow = true; key.shadow.mapSize.set(SMALL ? 1024 : 2048, SMALL ? 1024 : 2048); key.shadow.bias = -0.0004; key.shadow.camera.near = 1; key.shadow.camera.far = 9;
+scene.add(key, key.target);
+const rim = new THREE.DirectionalLight(0x86b8ff, 0); rim.position.set(-3, 1.6, 3); scene.add(rim);
+const rim2 = new THREE.DirectionalLight(0xffd3a1, 0); rim2.position.set(4, 1.2, -2.5); scene.add(rim2);
+
+/* ---------- Post ---------- */
+// Render into a multisampled target where WebGL2 allows it: the composer's buffers skip the canvas antialiasing.
+const composer = new THREE.EffectComposer(renderer, renderer.capabilities.isWebGL2
+  ? Object.assign(new THREE.WebGLMultisampleRenderTarget(innerWidth * DPR, innerHeight * DPR, { format: THREE.RGBAFormat }), { samples: 4 })
+  : undefined);
+composer.addPass(new THREE.RenderPass(scene, camera));
+const bloom = new THREE.UnrealBloomPass(new THREE.Vector2(512, 512), 0.8, 0.5, 0.9);
+composer.addPass(bloom);
+composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
+
+/* ---------- Camera path: one key per chapter middle ---------- */
+const KEYS = [
+  { s: 0.35, p: [2.75, 0.42, -1.8], t: [0.72, 0.55, 0], f: 34 },
+  { s: 1.5, p: [0.56, 0.82, -3.55], t: [0.56, 0.56, 0], f: 30 },
+  { s: 2.3, p: [-0.7, 1.22, -0.95], t: [-0.01, 0.84, 0], f: 30, pb: 0.35 },
+  { s: 2.75, p: [-0.72, 1.3, -0.92], t: [-0.04, 0.9, 0], f: 30, pb: 0.35 },
+  { s: 3.5, p: [-0.95, 0.98, -1.55], t: [-0.42, 0.64, 0], f: 32, pb: 0.6 },
+  { s: 4.5, p: [1.25, 1.55, -3.1], t: [-1.1, 0.45, -0.3], f: 38, pm: [-5.6, 2.7, -1.5], tm: [-0.5, 0.45, -0.2] },   // phones: from high behind, bike and car stack vertically
+  { s: 5.5, p: [0.42, 0.74, -0.95], t: [0.06, 0.5, -0.04], f: 30, pb: 0.25 },
+  { s: 6.5, p: [3.25, 0.72, -0.4], t: [0.5, 0.6, 0], f: 28 },
+  { s: 7.5, p: [1.35, 1.6, -3.7], t: [-0.15, 0.5, 0], f: 30 },
+  { s: 8.5, p: [-2.5, 0.55, -1.9], t: [0.45, 0.55, 0], f: 34 },
+];
+const camP = V(0, 0, 0), camT = V(0, 0, 0);
+let camPB = 1;
+function cameraAt(s) {
+  let a = KEYS[0], b = KEYS[0];
+  if (s >= KEYS[KEYS.length - 1].s) a = b = KEYS[KEYS.length - 1];
+  else for (let i = 0; i < KEYS.length - 1; i++) if (s >= KEYS[i].s && s < KEYS[i + 1].s) { a = KEYS[i]; b = KEYS[i + 1]; break; }
+  const e = a === b ? 0 : smooth(0, 1, (s - a.s) / (b.s - a.s));
+  const tall = camera.aspect < 1;
+  camP.set(...(tall && a.pm || a.p)).lerp(V(...(tall && b.pm || b.p)), e);
+  camT.set(...(tall && a.tm || a.t)).lerp(V(...(tall && b.tm || b.t)), e);
+  const pb = k => k.pm && tall ? 0 : (k.pb ?? 1);
+  camPB = pb(a) + (pb(b) - pb(a)) * e;
+  return a.f + (b.f - a.f) * e;
+}
+
+/* ---------- Labels ---------- */
+const labelsEl = document.getElementById("labels");
+function tag(text, obj, local, when, side) {
+  const el = document.createElement("div"); el.className = "tag";
+  el.innerHTML = `<i></i><b></b><span>${text}</span>`; labelsEl.appendChild(el);
+  return { el, obj, local, when, side };
+}
+const TAGS = [
+  tag("Raspberry Pi 5", trayParts.pi_case, centerOf(trayParts.pi_case), s => band(2, s) * smooth(2.35, 2.6, s), "L"),
+  tag("GPS receiver", trayParts.gps_rx, centerOf(trayParts.gps_rx), s => band(2, s) * smooth(2.4, 2.65, s)),
+  tag("BNO085 motion", trayParts.imu_board, centerOf(trayParts.imu_board), s => SMALL ? 0 : band(2, s) * smooth(2.45, 2.7, s)),
+  tag("Printed tray · ASA+", trayParts.frame, V(0.06, 0.004, -0.05), s => band(2, s) * smooth(2.5, 2.75, s), "L"),
+  tag("Camera Module 3 Wide", B, LENS.clone(), s => band(3, s)),
+  tag("Ultrasonic probe", B, probes[0].clone(), s => band(4, s) * (1 - smooth(4.55, 4.7, s))),
+  tag("Hall sensor", led, V(0, 0, 0), s => band(5, s), "L"),
+  tag("Spoke magnet", magnet, V(0, 0, 0), s => band(5, s) * 0.85),
+  tag("BNO085 in the box", box, V(0, 0.04, 0), s => band(6, s)),
+];
+const tmpV = V(0, 0, 0);
+function placeTags(s, w, h) {
+  for (const t of TAGS) {
+    const o = t.when(s);
+    if (o < 0.01) { t.el.style.opacity = 0; continue; }
+    tmpV.copy(t.local); t.obj.localToWorld(tmpV); tmpV.project(camera);
+    if (tmpV.z > 1 || Math.abs(tmpV.x) > 0.97 || Math.abs(tmpV.y) > 0.97) { t.el.style.opacity = 0; continue; }
+    t.el.style.opacity = o.toFixed(3);
+    const sx = (tmpV.x + 1) / 2 * w;
+    const roomR = sx < w - t.el.querySelector("span").offsetWidth - 48;
+    t.el.classList.toggle("flip", t.side === "L" ? sx > 140 || !roomR : !roomR);
+    t.el.style.transform = `translate(${sx.toFixed(1)}px, ${((1 - tmpV.y) / 2 * h).toFixed(1)}px)`;
+  }
+}
+
+/* ---------- HUD ---------- */
+const hud = document.getElementById("hud"), hudK = hud.querySelector(".k"), hudV = hud.querySelector(".v"), hudS = hud.querySelector(".s");
+let hudLast = "";
+function setHud(k, v, u, sub, alert) {
+  const key = k + v + u + sub + alert;
+  if (key === hudLast) return;
+  hudLast = key;
+  hudK.textContent = k; hudV.innerHTML = `${v}<small>${u}</small>`; hudS.textContent = sub || " ";
+  hud.classList.toggle("alert", !!alert);
+}
+
+/* ---------- Loop ---------- */
+let W = 0, H = 0;
+function resize() {
+  if (W && innerWidth === W && Math.abs(innerHeight - H) < 140) return;   // ignore the phone address bar sliding in and out
+  W = innerWidth; H = innerHeight;
+  renderer.setPixelRatio(DPR); composer.setPixelRatio(DPR);
+  renderer.setSize(W, H, false); composer.setSize(W, H);
+  bloom.resolution.set(W / 2, H / 2);
+  camera.aspect = W / H;
+  if (W > 860) camera.setViewOffset(W, H, -W * 0.16, 0, W, H);       // scene sits right of the captions
+  else camera.setViewOffset(W, H, 0, H * 0.17, W, H);                 // scene sits above the captions
+  camera.updateProjectionMatrix();
+}
+addEventListener("resize", resize); resize();
+
+let sSmooth = scrollS(), last = performance.now(), dist = 0, lastScroll = scrollY, ringClock = 0, ringNext = 0;
+let revs = 0, lastRev = 0, minBehind = 99, wasNear = false;
+let perfT = 0, perfN = 0;   // drop to 1.5x once if the first seconds run slow
+function tick(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  const t = now / 1000;
+  if (perfN >= 0 && t > 1.5) {
+    perfT += dt; perfN++;
+    if (perfN === 90) {
+      if (perfT / perfN > 1 / 40 && DPR > 1.5) { DPR = 1.5; W = 0; resize(); }
+      perfN = -1;
+    }
+  }
+  const sT = scrollS();
+  sSmooth += (sT - sSmooth) * (REDUCED ? 1 : 1 - Math.exp(-dt * 5));
+  const s = sSmooth;
+
+  // riding: scrolling moves the bike, plus a steady cruise once the lights are on
+  const cruise = (REDUCED ? 0 : 1) * (0.4 * smooth(0.7, 1.4, s) + 5.2 * band(5, s) + 1.4 * band(4, s));
+  dist += (scrollY - lastScroll) * 0.0028 + cruise * dt; lastScroll = scrollY;
+  const wa = dist / R;
+  rearSpin.rotation.z = frontSpin.rotation.z = -wa;
+  crank.rotation.z = -wa / 2.6;
+  for (let k = 0; k < 14; k++) {
+    const x = ((k * DASH - dist) % (DASH * 14) + DASH * 14) % (DASH * 14) - DASH * 6;
+    dm.compose(V(x, 0.001, -0.95), dq, V(1, 1, 1)); dashes.setMatrixAt(k, dm);
+  }
+  dashes.instanceMatrix.needsUpdate = true;
+
+  // light: dark at the top, a spotlight finds the bike, dims again at the very end
+  const lit = smooth(0.55, 1.35, s) * (1 - 0.55 * smooth(8.1, 8.7, s));
+  key.intensity = 1.8 * lit;
+  rim.intensity = 0.55 * lit; rim2.intensity = 0.2 * lit;
+  hemi.intensity = 0.03 + 0.06 * lit;
+  for (const m of envMats) m.envMapIntensity = 0.05 + 0.28 * lit;
+  const blinkOn = REDUCED || Math.sin(t * Math.PI * 2 * 1.1) > -0.2;
+  const rearK = 1 - smooth(1.2, 2, s) * 0.5;
+  rearLamp.material.color.copy(BRAKE).multiplyScalar(blinkOn ? 4 * rearK + 1 : 0.25);
+  rearGlow.intensity = blinkOn ? 0.9 : 0.05;
+  beam.material.uniforms.uK.value = 1 - 0.55 * lit;
+
+  // the box opens and the tray rises out
+  const open = smooth(1.85, 2.3, s) * (1 - smooth(3.0, 3.4, s));
+  const expl = smooth(2.2, 2.7, s) * (1 - smooth(2.95, 3.3, s));
+  boxLid.position.y = LID_Y + 0.12 * open; boxLid.position.x = -0.2 * open;
+  M.boxLid.opacity = 1 - 0.85 * open;
+  M.boxShell.opacity = 1 - 0.78 * open;
+  M.boxShell.depthWrite = M.boxLid.depthWrite = open < 0.05;
+  tray.position.y = 0.105 * expl; tray.position.x = -0.07 * expl;
+  for (const id in explodeLift) trayParts[id].position.y = explodeLift[id] * smooth(0.25, 1, expl);
+
+  // rear camera view cone
+  const fo = band(3, s);
+  fov.visible = fo > 0.01; fov.userData.mats.forEach(m => { m.opacity = fo; });
+
+  // car and ultrasonic pings
+  const q4 = clamp(s - 4, -0.4, 1.4);
+  const cv = smooth(-0.3, 0.05, q4) * (1 - smooth(1.05, 1.3, q4));
+  car.visible = cv > 0.01;
+  const approach = smooth(0.0, 0.62, q4), pass = smooth(0.62, 1.05, q4);
+  const carX = -15 + (15 - 1.75) * approach + 14 * pass;
+  const carZ = -0.35 - 1.8 * smooth(0.6, 0.82, q4);
+  car.position.set(carX - 0.16, 0, carZ);
+  car.userData.light.intensity = 4 * cv;
+  const behind = Math.max(0, -0.16 - carX);
+  const inLine = carZ > -1.2 && carX < -0.16;
+  ringClock += dt;
+  if (band(4, s) > 0.3 && ringClock > ringNext) {
+    ringNext = ringClock + (REDUCED ? 0.6 : 0.22);
+    const r = rings.find(r => r.age > 1.6); if (r) { r.age = 0; r.probe = (r.probe + 1) % 2; }
+  }
+  const reach = inLine ? Math.min(4.2, behind) : 4.2;
+  for (const r of rings) {
+    r.age += dt * (REDUCED ? 0.6 : 1);
+    const d = r.age * 3.2;
+    const alive = r.age < 1.6 && d < reach && band(4, s) > 0.05;
+    r.m.visible = alive;
+    if (!alive) continue;
+    const pr = probes[r.probe];
+    r.m.position.set(pr.x - d, pr.y, pr.z);
+    r.m.scale.setScalar(1 + d * 5.5);
+    r.m.material.opacity = 0.9 * (1 - d / reach) * band(4, s);
+  }
+  if (q4 < 0.05) { minBehind = 99; wasNear = false; }
+  if (inLine) minBehind = Math.min(minBehind, behind);
+
+  // wheel sensor: the LED lights as the magnet passes
+  const phase = ((wa % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  const near = phase < 0.22 || phase > Math.PI * 2 - 0.22;
+  if (near && !wasNear) revs++;
+  wasNear = near;
+  led.material.color.copy(BRAKE).multiplyScalar(near ? 6 : 0.3);
+
+  // lean
+  const lean = band(6, s) * (REDUCED ? 0.22 : 0.3 * Math.sin(t * 0.85));
+  bike.rotation.x = lean;
+
+  // camera
+  const f = cameraAt(s);
+  const sway = REDUCED ? 0 : 1;
+  const back = camera.aspect < 1 ? 1 + (Math.pow(Math.min(2.2, 0.95 / camera.aspect), 0.8) - 1) * camPB : 1;   // pull back on tall screens, less for close-ups
+  camP.sub(camT).multiplyScalar(back).add(camT);
+  camera.position.copy(camP).add(V(Math.sin(t * 0.21) * 0.025 * sway, Math.sin(t * 0.17) * 0.015 * sway, 0));
+  camera.fov = f; camera.updateProjectionMatrix();
+  camera.lookAt(camT);
+
+  // HUD
+  const h4 = band(4, s), h5 = band(5, s), h6 = band(6, s), hv = Math.max(h4, h5, h6);
+  hud.style.opacity = hv.toFixed(3);
+  if (hv > 0.01) {
+    if (h4 >= h5 && h4 >= h6) {
+      if (inLine && cv > 0.1) setHud("BEHIND", behind > 4.5 ? "4.5+" : behind.toFixed(2), "m", "ultrasonic · rear", behind < 1.8);
+      else if (minBehind < 50) setHud("CLOSEST", minBehind.toFixed(2), "m", "logged with the video", minBehind < 1.8);
+      else setHud("BEHIND", "clear", "", "ultrasonic · rear");
+    } else if (h5 >= h6) {
+      setHud("SPEED", (21.5 + 1.6 * Math.sin(t * 0.7)).toFixed(1), "km/h", `turn ${String(revs).padStart(4, "0")}`);
+    } else {
+      const deg = lean * 180 / Math.PI;
+      setHud("LEAN", (deg >= 0 ? "+" : "−") + Math.abs(deg).toFixed(1), "°", "BNO085 · live");
+    }
+  }
+
+  scene.updateMatrixWorld();
+  placeTags(s, W, H);
+  revealWords(scrollY, H);
+  const ci = Math.floor(s);
+  railLinks.forEach((a, i) => a.classList.toggle("on", ci === i + 1));
+  rail.style.opacity = (1 - smooth(7.9, 8.2, s)).toFixed(2);
+  updateReplay(clamp(s - 7, 0, 1));
+
+  composer.render();
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+})();
+</script>
+
+</body>
+</html>

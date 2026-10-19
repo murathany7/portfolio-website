@@ -11,6 +11,7 @@ import cryptoland from "@/public/cryptoland.jpeg";
 import stocks from "@/public/stocks.jpg";
 import borsapro from "@/public/borsapro_new.jpg";
 import yuppo from "@/public/po-icon.svg";
+import bikelogger from "@/public/bikelogger.jpg";
 export const links = [
   {
     name: "Home",
@@ -108,6 +109,14 @@ export const experiencesData = [
 
 export const projectsData = [
   {
+    title: "Bike Logger",
+    link: "/bike-logger",
+    description:
+      "A ride recorder I built for my own bike. A Raspberry Pi 5 in a 3D-printed tray logs GPS, lean, wheel speed, a rear camera and how close cars pass, then replays the whole ride on one synced timeline in a web dashboard and a Flutter app.",
+    tags: ["Python", "FastAPI", "Raspberry Pi", "Flutter", "CAD", "Three.js"],
+    imageUrl: bikelogger,
+  },
+  {
     title: "Yuppo",
     link: "https://yuppo.org",
     description:
@@ -190,4 +199,8 @@ export const skillsData = [
   "Django",
   "FastAPI",
   "Docker",
+  "Flutter",
+  "Raspberry Pi",
+  "CadQuery",
+  "Three.js",
 ] as const;
