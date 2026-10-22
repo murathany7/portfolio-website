@@ -5,7 +5,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { BsArrowRight, BsLinkedin } from "react-icons/bs";
 import { HiDownload } from "react-icons/hi";
-import { FaGithubSquare } from "react-icons/fa";
+import { FaBicycle, FaGithubSquare } from "react-icons/fa";
 import { useSectionInView } from "@/lib/hooks";
 
 export default function Intro() {
@@ -67,7 +67,7 @@ export default function Intro() {
       </motion.h1>
 
       <motion.div
-        className="flex flex-col sm:flex-row items-center justify-center gap-2 px-4 text-lg font-medium"
+        className="flex flex-col sm:flex-row items-center justify-center gap-4 px-4 text-lg font-medium"
         initial={{ opacity: 0, y: 100 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{
@@ -77,10 +77,12 @@ export default function Intro() {
         {/* Plain link: /bike-logger is a static page in public/, outside the app router */}
         <a
           href="/bike-logger"
-          className="group bg-gray-900 text-white px-7 py-3 flex items-center gap-2 rounded-full outline-none focus:scale-110 hover:scale-110 hover:bg-gray-950 active:scale-105 transition"
+          className="group relative flex items-center gap-3 rounded-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 px-10 py-5 text-xl font-semibold text-white shadow-[0_10px_40px_-8px_rgba(147,51,234,0.7)] outline-none ring-4 ring-white/60 transition hover:scale-110 hover:shadow-[0_14px_50px_-6px_rgba(219,39,119,0.8)] focus:scale-110 active:scale-105 dark:ring-white/10 sm:text-2xl"
         >
-          See Bike Logger{" "}
-          <BsArrowRight className="opacity-70 group-hover:translate-x-1 transition" />
+          <span className="absolute -inset-1 -z-10 animate-pulse rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-60 blur-lg" />
+          <FaBicycle className="text-3xl transition group-hover:-rotate-12" />
+          See Bike Logger
+          <BsArrowRight className="transition group-hover:translate-x-1.5" />
         </a>
 
         {/* <a
