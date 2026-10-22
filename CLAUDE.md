@@ -25,7 +25,7 @@ A single-page personal portfolio site built on Next.js 16 App Router with React 
 
 **Theming:** `context/theme-context.tsx` toggles the `dark` class on `<html>` and persists the choice to `localStorage` (falling back to `prefers-color-scheme`). Tailwind is configured with `darkMode: "class"`, so all dark styling uses `dark:` variants.
 
-**Contact form** uses a Next.js server action: `actions/sendEmail.ts` (`"use server"`) sends via Resend with the React Email template in `email/contact-form-email.tsx`. Requires `RESEND_API_KEY` in `.env.local`; the `to`/`from` addresses are hardcoded in the action.
+**Contact:** `components/contact.tsx` shows a `mailto:` link to murathan@yildirim.works; there is no contact form.
 
 **Deployment:** hosted on Netlify at murathanyildirim.com, auto-deploys on push to master. `images.unoptimized` is set in `next.config.js` because Netlify's image-optimization function was returning 500s; images are served as plain static files.
 
