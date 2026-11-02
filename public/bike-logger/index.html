@@ -100,6 +100,8 @@ h2 { font-size: clamp(2.5rem, 6.4vw, 5.6rem); }
 .specs dd span { display: block; font-size: .85rem; font-weight: 400; color: var(--dim); font-variation-settings: "wdth" 100; }
 .foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-family: var(--mono); font-size: 12px; color: var(--dim); }
 .foot strong { color: var(--ink); font-weight: 500; }
+.foot a { color: var(--ink); text-decoration: none; border-bottom: 1px solid currentColor; }
+.foot a:hover { color: var(--lamp); }
 
 .no3d #scene { display: none; }
 .no3d body, body.no3d { background: radial-gradient(60% 50% at 70% 60%, #1a1712 0%, var(--night) 70%); }
@@ -223,7 +225,7 @@ h2 { font-size: clamp(2.5rem, 6.4vw, 5.6rem); }
         <div><dt>Tray</dt><dd>3D-printed ASA+<span>Parametric CAD</span></dd></div>
         <div><dt>Power</dt><dd>20 000 mAh<span>45 W, own housing</span></dd></div>
       </dl>
-      <div class="foot"><strong>Runs offline. Your rides stay with you.</strong><span>Rendered from the real CAD parts</span></div>
+      <div class="foot"><strong>Runs offline. Your rides stay with you.</strong><span>Rendered from the real CAD parts · <a href="https://murathanyildirim.com/bike-logger/hardware/">Build notes: 3D parts, wiring, the bike &rarr;</a></span></div>
     </div>
   </section>
 </main>

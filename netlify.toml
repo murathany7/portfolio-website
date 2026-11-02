@@ -4,3 +4,13 @@
 # served, so it's safe to exclude from scanning.
 [build.environment]
   SECRETS_SCAN_OMIT_PATHS = ".netlify/.next/cache/**,.next/cache/**"
+
+# Bike Logger hardware notes: the read-only knowledge editor from the bikelog repo, served by the API server
+# (bike-hardware.service behind mapi.murathanyildirim.com/bike-hardware/, deployed with
+# hardware/knowledge/deploy.sh in bikelog). Proxied so it lives at murathanyildirim.com/bike-logger/hardware/.
+# Netlify ignores trailing slashes when matching, so the page itself adds the slash its relative links need.
+[[redirects]]
+  from = "/bike-logger/hardware/*"
+  to = "https://mapi.murathanyildirim.com/bike-hardware/:splat"
+  status = 200
+  force = true
