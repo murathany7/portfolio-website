@@ -18,6 +18,10 @@ export const links = [
     hash: "#home",
   },
   {
+    name: "Bike Logger",
+    hash: "#bike-logger",
+  },
+  {
     name: "About",
     hash: "#about",
   },
@@ -106,6 +110,20 @@ export const experiencesData = [
     date: "March 2021 - August 2021",
   },
 ] as const;
+
+// The Bike Logger section on the home page (components/bike-logger.tsx). The build notes are the bikelog repo's
+// hardware knowledge editor, read-only; #bike, #wiring, #3d and #notes open one of its tabs.
+export const bikeLoggerData = {
+  description:
+    "A Raspberry Pi 5 in a 3D-printed tray on the rear rack logs GPS, lean, wheel speed, a rear camera and how close cars pass. A FastAPI backend, a web dashboard and a Flutter app replay every ride on one synced timeline. Every printed part is parametric CAD, and the build notes are open: the bike, the wiring and the parts.",
+  parts: ["Raspberry Pi 5", "GPS", "BNO085 IMU", "Ultrasonic", "Hall sensor", "Camera Module 3", "CadQuery", "FastAPI", "Flutter"],
+  links: [
+    { icon: "bike", title: "The bike", text: "Where every part sits on the frame.", href: "/bike-logger/hardware/#bike" },
+    { icon: "wiring", title: "Wiring", text: "Pi pins, breadboard and every sensor wire.", href: "/bike-logger/hardware/#wiring" },
+    { icon: "parts", title: "3D parts", text: "The printed tray, housings and mounts.", href: "/bike-logger/hardware/#3d" },
+    { icon: "notes", title: "Notes", text: "Decisions, parts on hand and open questions.", href: "/bike-logger/hardware/#notes" },
+  ],
+} as const;
 
 export const projectsData = [
   {
