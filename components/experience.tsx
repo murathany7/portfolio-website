@@ -17,16 +17,17 @@ export default function Experience() {
 
   return (
     <section id="experience" ref={ref} className="scroll-mt-28 mb-28 sm:mb-40">
-      <SectionHeading>My experience</SectionHeading>
+      <SectionHeading>Experience</SectionHeading>
       <VerticalTimeline lineColor="">
         {experiencesData.map((item, index) => (
           <React.Fragment key={index}>
             <VerticalTimelineElement
               contentStyle={{
                 background:
-                  theme === "light" ? "#f3f4f6" : "rgba(255, 255, 255, 0.05)",
-                boxShadow: "none",
-                border: "1px solid rgba(0, 0, 0, 0.05)",
+                  theme === "light" ? "rgba(255, 255, 255, 0.8)" : "rgba(255, 255, 255, 0.06)",
+                boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+                border: theme === "light" ? "1px solid rgba(0, 0, 0, 0.06)" : "1px solid rgba(255, 255, 255, 0.1)",
+                borderRadius: "1rem",
                 textAlign: "left",
                 padding: "1.3rem 2rem",
               }}

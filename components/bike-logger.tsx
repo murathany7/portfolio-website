@@ -53,14 +53,14 @@ export default function BikeLogger() {
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <a
                 href="/bike-logger"
-                className="group flex items-center gap-2 rounded-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 px-6 py-3 font-semibold text-white shadow-[0_10px_30px_-8px_rgba(147,51,234,0.7)] outline-none transition hover:scale-105 focus:scale-105 active:scale-100"
+                className="group flex items-center gap-2 rounded-full bg-white px-6 py-3 font-semibold text-gray-950 outline-none transition hover:bg-[#ffc46e] focus:bg-[#ffc46e] active:scale-[0.98]"
               >
                 Explore in 3D
                 <BsArrowRight className="transition group-hover:translate-x-1" />
               </a>
               <a
                 href="/bike-logger/hardware/#bike"
-                className="group flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-6 py-3 font-semibold text-white outline-none transition hover:scale-105 hover:bg-white/15 focus:scale-105 active:scale-100"
+                className="group flex items-center gap-2 rounded-full border border-white/20 px-6 py-3 font-semibold text-white outline-none transition hover:bg-white/10 focus:bg-white/10 active:scale-[0.98]"
               >
                 Build notes
                 <BsArrowUpRight className="transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
@@ -94,7 +94,7 @@ export default function BikeLogger() {
               viewport={{ once: true }}
               transition={{ delay: 0.05 * i }}
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-900 text-lg text-white transition group-hover:bg-gradient-to-br group-hover:from-indigo-600 group-hover:to-pink-500 dark:bg-white/15">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-900 text-lg text-white transition group-hover:bg-[#ffc46e] group-hover:text-gray-950 dark:bg-white/15">
                 <Icon />
               </span>
               <span className="mt-4 flex items-center gap-1.5 font-semibold">
