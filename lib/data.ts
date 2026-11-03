@@ -12,6 +12,7 @@ import stocks from "@/public/stocks.jpg";
 import borsapro from "@/public/borsapro_new.jpg";
 import yuppo from "@/public/po-icon.svg";
 import bikelogger from "@/public/bikelogger.jpg";
+import reelstudio from "@/public/reel-studio/bike-logger-reel.jpg";
 export const links = [
   {
     name: "Home",
@@ -20,6 +21,10 @@ export const links = [
   {
     name: "Bike Logger",
     hash: "#bike-logger",
+  },
+  {
+    name: "Reel Studio",
+    hash: "#reel-studio",
   },
   {
     name: "About",
@@ -125,6 +130,21 @@ export const bikeLoggerData = {
   ],
 } as const;
 
+// The Reel Studio section on the home page (components/reel-studio.tsx). The reel is the Bike Logger kit reel from
+// the reel-studio repo, scaled down to 540px and muted for the web.
+export const reelStudioData = {
+  description:
+    "An open-source Claude Code plugin that makes marketing reels, ads and posts for any brand. Claude writes a brief and a storyboard, waits for your yes, builds the piece as plain HTML pages on one clock, renders every frame in headless Chrome, checks them and hands back an MP4. No editor, no timeline, no per-video fees.",
+  engines: ["Claude Code", "HTML/CSS + GSAP", "Three.js", "Pixi.js", "SVG rig · Lottie", "Blender", "Headless Chrome", "ffmpeg"],
+  install: "npx reel-studio init",
+  links: [
+    { icon: "github", title: "GitHub", text: "Source, skills and example productions.", href: "https://github.com/murathany7/reel-studio" },
+    { icon: "npm", title: "npm", text: "npx reel-studio init in any folder.", href: "https://www.npmjs.com/package/reel-studio" },
+    { icon: "python", title: "PyPI", text: "pipx install reel-studio, same kit.", href: "https://pypi.org/project/reel-studio/" },
+    { icon: "brew", title: "Homebrew", text: "Brings Node and ffmpeg with it.", href: "https://github.com/murathany7/homebrew-reel-studio" },
+  ],
+} as const;
+
 export const projectsData = [
   {
     title: "Bike Logger",
@@ -133,6 +153,14 @@ export const projectsData = [
       "A ride recorder I built for my own bike. A Raspberry Pi 5 in a 3D-printed tray logs GPS, lean, wheel speed, a rear camera and how close cars pass, then replays the whole ride on one synced timeline in a web dashboard and a Flutter app.",
     tags: ["Python", "FastAPI", "Raspberry Pi", "Flutter", "CAD", "Three.js"],
     imageUrl: bikelogger,
+  },
+  {
+    title: "Reel Studio",
+    link: "https://github.com/murathany7/reel-studio",
+    description:
+      "An open-source Claude Code plugin that makes agency-quality reels, ads and posts for any brand. Every frame is an HTML page on one clock, rendered in headless Chrome to MP4 and checked frame by frame.",
+    tags: ["Claude Code", "Node.js", "GSAP", "Three.js", "Blender", "ffmpeg"],
+    imageUrl: reelstudio,
   },
   {
     title: "Yuppo",
