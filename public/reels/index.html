@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bike Logger Reels · Reel Studio</title>
+<meta name="description" content="Bike Logger reels made with Reel Studio: six pieces, four looks and 19 ad patterns, each rendered frame by frame from code.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect width=%2216%22 height=%2216%22 rx=%223%22 fill=%22%2306080a%22/%3E%3Cpath d=%22M6 4.5v7l5.5-3.5z%22 fill=%22%23ffc46e%22/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://mapi.murathanyildirim.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a night-road contact sheet, one section per piece, 9:16 tiles. Each piece keeps the colour the reels use for
+   its sensor event. Media (MP4 + poster) is served from mapi.murathanyildirim.com/reels/ (nginx, /var/www/reels). */
+:root {
+  color-scheme: dark;
+  --night: #06080a; --panel: #0d1115; --line: #232931; --ink: #eceae4; --dim: #8a9199;
+  --lamp: #ffc46e; --signal: #84dcff; --brake: #ff4a3d; --imu: #9b85e6;
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+* { box-sizing: border-box; }
+html { background: var(--night); }
+body { margin: 0; background: var(--night); color: var(--ink); font: 400 15px/1.5 var(--display); }
+a { color: inherit; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 28px 72px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.back { display: inline-flex; gap: 8px; align-items: center; font: 500 13px/1 var(--mono); color: var(--dim); text-decoration: none; padding: 8px 0; }
+.back:hover, .back:focus-visible { color: var(--ink); }
+.eyebrow { margin-top: 28px; font: 500 12px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--signal); }
+h1 { font-weight: 850; font-variation-settings: "wdth" 125; font-size: clamp(38px, 7vw, 72px); line-height: .92; letter-spacing: -.02em; margin: 12px 0 14px; text-wrap: balance; }
+.lede { max-width: 64ch; color: var(--dim); font-size: 16px; margin: 0; }
+.lede b { color: var(--ink); font-weight: 600; }
+.lede a { color: var(--lamp); }
+nav.pieces { position: sticky; top: 0; z-index: 5; background: var(--night); margin: 26px 0 8px; padding-block: 12px;
+  border-bottom: 1px solid var(--line); display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+nav.pieces a { flex: none; font: 500 13px/1 var(--mono); text-decoration: none; border: 1px solid var(--line); border-radius: 3px; padding: 8px 11px; }
+nav.pieces a:hover, nav.pieces a:focus-visible { border-color: var(--dim); outline: none; }
+nav.pieces i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; }
+section { margin-top: 34px; scroll-margin-top: 64px; }
+h2 { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 0 0 4px; font-weight: 800; font-variation-settings: "wdth" 112; font-size: 26px; letter-spacing: -.01em; }
+h2 small { font: 400 12px/1 var(--mono); color: var(--dim); letter-spacing: .08em; }
+section > p { margin: 0 0 16px; color: var(--dim); max-width: 70ch; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px 14px; }
+.tile { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.tile button { all: unset; cursor: pointer; display: block; position: relative; aspect-ratio: 9 / 16; border-radius: 6px; overflow: hidden; background: var(--panel); border: 1px solid var(--line); }
+.tile button:focus-visible { outline: 2px solid var(--lamp); outline-offset: 2px; }
+.tile img, .tile video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.play { position: absolute; inset: auto 10px 10px auto; width: 34px; height: 34px; border-radius: 50%; background: rgba(6,8,10,.75); border: 1px solid var(--line); display: grid; place-items: center; }
+.play::before { content: ""; border-left: 11px solid var(--ink); border-top: 7px solid transparent; border-bottom: 7px solid transparent; margin-left: 3px; }
+.marker { height: 3px; border-radius: 2px; background: var(--line); position: relative; }
+.marker::after { content: ""; position: absolute; top: -3px; left: var(--at); width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+.meta strong { display: block; font-weight: 700; font-size: 15px; line-height: 1.2; }
+.meta em { display: block; margin-top: 3px; font: 400 11.5px/1.35 var(--mono); font-style: normal; color: var(--dim); overflow-wrap: anywhere; }
+footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--dim); font: 400 12.5px/1.6 var(--mono); max-width: 90ch; }
+footer a { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="/#reel-studio">← murathanyildirim.com</a>
+  <div class="eyebrow">Reel Studio · Bike Logger · 60 fps · silent</div>
+  <h1>One bike, many ways.</h1>
+  <p class="lede">Reels for <a href="/bike-logger">Bike Logger</a>, made with
+    <a href="https://github.com/murathany7/reel-studio">Reel Studio</a>. Each piece is <b>one composition</b> built from the
+    same sourced facts (Raspberry Pi 5, Camera Module 3 Wide, GPS, BNO085, ultrasonic, A3144 Hall sensor) and rendered
+    frame by frame in four looks. The pattern pack arranges those facts by 19 ad patterns. Tap a tile to play it.</p>
+  <nav class="pieces" id="nav" aria-label="Pieces"></nav>
+  <div id="list"></div>
+  <footer>Shown here: the main 9:16 cut of each piece and look. Every piece also exists in 4:5, 1:1, 16:9 and 1.91:1, in a
+    fun and a dry adult voice and with three hooks. Rendered with Reel Studio's <code>core/render.mjs</code>; every file
+    passed its video QA (30 fps CFR, H.264, safe zones).</footer>
+</div>
+
+<script>
+const MEDIA = "https://mapi.murathanyildirim.com/reels";
+const PIECES = {
+  "REEL-006": ["Meet the parts", "The box opens and each part rises out, doing its job: the cooler spins, the camera sees 102° behind, the GPS gets a fix.", "var(--lamp)"],
+  "REEL-007": ["One ride, one timeline", "On a city ride the bike's own sensors log a pothole, a lean, an overtake and every wheel turn, then the replay scrubs.", "var(--brake)"],
+  "REEL-008": ["The tunnel", "In a tunnel the GPS loses its fix; the Hall sensor keeps pulsing once per wheel turn.", "var(--signal)"],
+  "REEL-009": ["Pattern pack", "The same facts arranged by 19 ad patterns.", "var(--imu)"],
+  "REEL-010": ["Five signals", "Each sensor's own trace on one clock: the pothole, the overtake and the tunnel line up on every row.", "#58e08a"],
+  "REEL-011": ["The box in 3D", "The IP65 box at its real proportions opens; the Pi 5's cooler spins inside.", "#eceae4"],
+};
+const LOOKS = { cartoon: "Illustrated", blueprint: "Blueprint", daylight: "Daylight", type: "Kinetic type" };
+// [piece, look, id, duration s, pattern title, pattern basis]: the main 9:16 fun-voice cut, hook A.
+const REELS = [
+  ["REEL-006", "cartoon", "cdedb557402f6219763887812a75cfbe", 18],
+  ["REEL-006", "blueprint", "2f02b85cc6483c564bc98630a3370aa1", 18],
+  ["REEL-006", "daylight", "2ccce9dac970ccca1a7196bb11760e3a", 18],
+  ["REEL-006", "type", "09fd1808da78bde570123511a755a8a8", 18],
+  ["REEL-007", "cartoon", "6f468e226d89eec8a3a566fdeda47306", 16.2],
+  ["REEL-007", "blueprint", "ce285baa15099a9dc23c736334da5ca9", 16.2],
+  ["REEL-007", "daylight", "aded7dbabfa18342cf73e9b5faf3523d", 16.2],
+  ["REEL-007", "type", "70cbc8cd813a46ab76e5102004680cb8", 16.2],
+  ["REEL-008", "cartoon", "ec4c1ce004d4a9fbb4b5ae4ed01cf8cf", 11.2],
+  ["REEL-008", "blueprint", "06bcc248cc331908b379ab88ca84e263", 11.2],
+  ["REEL-008", "daylight", "eccac7b96567f91622971b26f370fd35", 11.2],
+  ["REEL-008", "type", "1716421943622817160a43f0935b686c", 11.2],
+  ["REEL-009", "cartoon", "55cc363a27b28375696eb58afb6970c4", 12.4, "Before, after, bridge", "Transformation"],
+  ["REEL-009", "cartoon", "3d1204f21ef36d1f022cdd81441ac191", 10.2, "Contrast", "Contrast effect, anchoring"],
+  ["REEL-009", "cartoon", "9b3cb47f00191572c9dfd65c6f459d5b", 9.8, "Curiosity gap", "Information gap (Loewenstein 1994)"],
+  ["REEL-009", "cartoon", "2b6dc108f339b26985ea1a7efa17d5d3", 9.6, "Foot in the door", "Freedman & Fraser 1966"],
+  ["REEL-009", "cartoon", "1110f283762750b4da7ecc2d1cc57aaa", 8.8, "Give first", "Reciprocity (Cialdini 1984)"],
+  ["REEL-009", "cartoon", "666fcb9af9681b13ddda4dac8d211c54", 10.8, "Goal gradient", "Kivetz, Urminsky & Zheng 2006"],
+  ["REEL-009", "cartoon", "863a4305ef9e397b0ca2fa1e6aa3a08a", 12.2, "How it works in three", "Rule of three (Shu & Carlson 2014)"],
+  ["REEL-009", "cartoon", "28b7ff2a142738ecd1000c71c6001559", 14, "IKEA effect", "Norton, Mochon & Ariely 2012"],
+  ["REEL-009", "cartoon", "80ffad6c1ac7893edf9b7fd2fb056001", 9.8, "Loss framing", "Tversky & Kahneman 1981"],
+  ["REEL-009", "cartoon", "cd47c2566cf725b4eba0e5c6ca89c16c", 14.6, "Mini story", "Narrative transportation (Green & Brock 2000)"],
+  ["REEL-009", "cartoon", "a9b706ea480db6f35534fd3c83149022", 15.4, "Numbered list", "Chunking (Miller 1956)"],
+  ["REEL-009", "cartoon", "87d9a5f1d757cd8904be647701752d06", 10.6, "Objection, answer", "Two-sided messages (Hovland 1949)"],
+  ["REEL-009", "cartoon", "d5893aebdc1fdece043a143cdc18002b", 7.8, "One feature", "Single-minded proposition"],
+  ["REEL-009", "cartoon", "3adfd9da64d0b98cbd7ec0c8db805ed3", 9.8, "Pattern interrupt", "Orienting response (Sokolov 1963)"],
+  ["REEL-009", "cartoon", "20a7dd1b958f1cd3a5d198e67a4ded64", 13.9, "Problem, agitate, solve", "Pain-point ad"],
+  ["REEL-009", "cartoon", "0f960be38adf382eb807d3c16f16d6a0", 8, "Product demo", "Show the result"],
+  ["REEL-009", "cartoon", "afd3ee5cd38fa386640de58d3572adb9", 9.2, "Specific numbers", "Schindler & Yalch 2006"],
+  ["REEL-009", "cartoon", "66723f30168fcaa7275c743c444533f0", 9.9, "Truth sandwich", "Lewandowsky et al. 2020"],
+  ["REEL-009", "cartoon", "e42569aad4aa669a6bbdd2b0e1b88c3a", 7.8, "What's inside", "Anticipation (Loewenstein 1987)"],
+  ["REEL-010", "cartoon", "dd3b3921b201696b5cf9e26ef4bace0b", 12.4],
+  ["REEL-010", "blueprint", "434d072c37794bdb2279c7a99981410f", 12.4],
+  ["REEL-010", "daylight", "6ec3162370b23010ff4be1c5727251fd", 12.4],
+  ["REEL-011", "cartoon", "9ee5ee485d199f04910f47561ccd58a0", 11.8],
+  ["REEL-011", "daylight", "40abcca997143ec9cc05133d2e04bee1", 11.8],
+];
+
+const nav = document.getElementById("nav"), list = document.getElementById("list");
+for (const [key, [title, blurb, colour]] of Object.entries(PIECES)) {
+  const rows = REELS.filter((r) => r[0] === key);
+  const link = document.createElement("a");
+  link.href = "#" + key.toLowerCase();
+  link.innerHTML = `<i style="background:${colour}"></i>`;
+  link.append(title);
+  nav.append(link);
+
+  const sec = document.createElement("section");
+  sec.id = key.toLowerCase();
+  sec.innerHTML = `<h2><span></span><small>${key} · ${rows.length} reel${rows.length === 1 ? "" : "s"}</small></h2><p></p><div class="grid"></div>`;
+  sec.querySelector("h2 span").textContent = title;
+  sec.querySelector("p").textContent = blurb;
+  rows.forEach(([, look, id, dur, pattern, basis], i) => {
+    const name = pattern || LOOKS[look];
+    const el = document.createElement("div");
+    el.className = "tile";
+    el.innerHTML = `<button type="button"><img alt="" loading="lazy" width="270" height="480" src="${MEDIA}/c/${id}.jpg"><span class="play"></span></button>
+      <div class="marker" style="--c:${colour};--at:${8 + ((i * 37) % 80)}%"></div>
+      <div class="meta"><strong></strong><em></em></div>`;
+    el.querySelector("strong").textContent = name;
+    el.querySelector("em").textContent = (basis ? basis + " · " : "") + dur.toFixed(1) + " s";
+    const btn = el.querySelector("button");
+    btn.setAttribute("aria-label", `Play ${title}: ${name}`);
+    btn.addEventListener("click", () => {
+      if (btn.querySelector("video")) return;
+      const v = document.createElement("video");
+      Object.assign(v, { src: `${MEDIA}/v/${id}.mp4`, poster: `${MEDIA}/c/${id}.jpg`, controls: true, playsInline: true, muted: true, autoplay: true, loop: true });
+      btn.replaceChildren(v);
+      v.play().catch(() => {});
+    });
+    sec.querySelector(".grid").append(el);
+  });
+  list.append(sec);
+}
+</script>
+</body>
+</html>

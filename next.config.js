@@ -1,10 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Bike Logger showcase: a static page in public/bike-logger, served at /bike-logger.
+  // Bike Logger showcase and the reel gallery: static pages in public/bike-logger and public/reels.
   async rewrites() {
     return [
       { source: "/bike-logger", destination: "/bike-logger/index.html" },
       { source: "/bike-logger/", destination: "/bike-logger/index.html" },
+      { source: "/reels", destination: "/reels/index.html" },
+      { source: "/reels/", destination: "/reels/index.html" },
     ];
   },
   images: {
